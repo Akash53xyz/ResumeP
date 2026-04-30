@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #e8d5d5; /* Default color from your photo */
+            --text-main: #333;
+            --header-font: 'Playfair Display', serif;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Toolbar Styles */
+        .toolbar {
+            width: 100%;
+            background: #2c3e50;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .toolbar label { color: white; font-weight: bold; }
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .preview-btn { background: #3498db; color: white; }
+        .download-btn { background: #27ae60; color: white; display: none; }
+        .edit-btn { background: #f39c12; color: white; display: none; }
+
+        /* Resume Container */
+        #resume-paper {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 20px;
+            display: flex;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 35%;
+            background-color: var(--primary-color);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .photo-upload-box {
+            width: 200px;
+            height: 250px;
+            border: 2px solid #fff;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            background: #eee;
+            position: relative;
+        }
+
+        .photo-upload-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Main Content */
+        .main-content {
+            width: 65%;
+            padding: 40px;
+            background: white;
+        }
+
+        .section-header {
+            background-color: var(--primary-color);
+            padding: 5px 15px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Dynamic Inputs */
+        [contenteditable="true"] {
+            outline: none;
+            padding: 2px 5px;
+            border-bottom: 1px dashed transparent;
+        }
+        [contenteditable="true"]:hover { border-bottom: 1px dashed #ccc; }
+
+        .add-btn {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .experience-item, .education-item {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .subheading { font-weight: bold; font-size: 1.1em; display: block; }
+        .company-name { font-style: italic; color: #555; }
+        .date-range { color: #888; font-size: 0.9em; }
+        
+        .list-item { margin-left: 20px; list-style-type: disc; }
+
+        /* Mode Management */
+        .preview-mode .add-btn, .preview-mode .toolbar-edit-only {
+            display: none !important;
+        }
+        .preview-mode [contenteditable="true"] {
+            border: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="toolbar-edit-only">
+            <label>Theme Color: </label>
+            <input type="color" id="colorPicker" value="#e8d5d5">
+        </div>
+        <button class="btn preview-btn" onclick="toggleMode('preview')">Preview Resume</button>
+        <button class="btn edit-btn" onclick="toggleMode('edit')">Back to Edit</button>
+        <button class="btn download-btn" onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+    <div id="resume-paper">
+        <div class="sidebar" id="sidebarBg">
+            <div class="photo-upload-box" onclick="document.getElementById('photoInput').click()">
+                <span id="uploadLabel">CLICK TO UPLOAD PHOTO</span>
+                <img id="profilePic" src="" style="display:none">
+            </div>
+            <input type="file" id="photoInput" style="display:none" accept="image/*">
+
+            <div class="side-section">
+                <div class="section-header">ABOUT ME</div>
+                <div contenteditable="true">Enter a brief summary about yourself...</div>
+            </div>
+
+            <div class="side-section">
+                <div class="section-header">CONTACT</div>
+                <div contenteditable="true">+123-456-7890</div>
+                <div contenteditable="true">hello@reallygreatsite.com</div>
+                <div contenteditable="true">www.reallygreatsite.com</div>
+                <div contenteditable="true">123 Anywhere St., Any City</div>
+            </div>
+
+            <div class="side-section">
+                <div class="section-header">SKILLS <button class="add-btn" onclick="addItem('skills-list')">+</button></div>
+                <div id="skills-list">
+                    <div class="list-item" contenteditable="true">Skill Name</div>
+                </div>
+            </div>
+
+            <div class="side-section">
+                <div class="section-header">LANGUAGES <button class="add-btn" onclick="addItem('lang-list')">+</button></div>
+                <div id="lang-list">
+                    <div class="list-item" contenteditable="true">English</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <h1 contenteditable="true" style="font-size: 50px; margin-bottom: 0;">NAME</h1>
+            <h3 contenteditable="true" style="letter-spacing: 3px; border-top: 2px solid #000; padding-top: 10px;">PROFESSION</h3>
+
+            <div style="margin-top: 40px;">
+                <div class="section-header">WORK EXPERIENCE <button class="add-btn" onclick="addWorkExperience()">+</button></div>
+                <div id="work-container">
+                    </div>
+            </div>
+
+            <div style="margin-top: 40px;">
+                <div class="section-header">EDUCATION <button class="add-btn" onclick="addEducation()">+</button></div>
+                <div id="education-container">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Color Picker Logic ---
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--primary-color', e.target.value);
+        });
+
+        // --- Photo Upload Logic ---
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('profilePic');
+                output.src = reader.result;
+                output.style.display = 'block';
+                document.getElementById('uploadLabel').style.display = 'none';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        // --- Dynamic Section Adding ---
+        function addItem(containerId) {
+            const container = document.getElementById(containerId);
+            const newItem = document.createElement('div');
+            newItem.className = 'list-item';
+            newItem.contentEditable = "true";
+            newItem.innerText = "New Item";
+            container.appendChild(newItem);
+        }
+
+        function addWorkExperience() {
+            const container = document.getElementById('work-container');
+            const div = document.createElement('div');
+            div.className = 'experience-item';
+            div.innerHTML = `
+                <span class="subheading" contenteditable="true">JOB TITLE</span>
+                <span class="company-name" contenteditable="true">Company Name</span>
+                <div class="date-range" contenteditable="true">2020 - 2025</div>
+                <div contenteditable="true">Describe your responsibilities and achievements here...</div>
+            `;
+            container.appendChild(div);
+        }
+
+        function addEducation() {
+            const container = document.getElementById('education-container');
+            const div = document.createElement('div');
+            div.className = 'education-item';
+            div.innerHTML = `
+                <span class="subheading" contenteditable="true">DEGREE NAME</span>
+                <span class="company-name" contenteditable="true">University/School Name</span>
+                <div class="date-range" contenteditable="true">2008 - 2012</div>
+            `;
+            container.appendChild(div);
+        }
+
+        // --- Preview and Download Logic ---
+        function toggleMode(mode) {
+            if (mode === 'preview') {
+                document.body.classList.add('preview-mode');
+                document.querySelector('.preview-btn').style.display = 'none';
+                document.querySelector('.edit-btn').style.display = 'inline-block';
+                document.querySelector('.download-btn').style.display = 'inline-block';
+                document.querySelector('.toolbar-edit-only').style.display = 'none';
+            } else {
+                document.body.classList.remove('preview-mode');
+                document.querySelector('.preview-btn').style.display = 'inline-block';
+                document.querySelector('.edit-btn').style.display = 'none';
+                document.querySelector('.download-btn').style.display = 'none';
+                document.querySelector('.toolbar-edit-only').style.display = 'block';
+            }
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('resume-paper');
+            const opt = {
+                margin: 0,
+                filename: 'My_Resume.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Initialize with one empty entry
+        window.onload = () => {
+            addWorkExperience();
+            addEducation();
+        };
+    </script>
+</body>
+</html>

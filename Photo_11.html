@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-bg: #3a4856;
+            --accent-color: #3a4856;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f3;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Container for the Editor and Preview */
+        .container {
+            width: 1000px;
+            background: #fff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            min-height: 1200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Utility classes */
+        .hidden { display: none !important; }
+
+        /* Resume Layout Structure */
+        .resume-body {
+            display: flex;
+            flex: 1;
+        }
+
+        .sidebar {
+            width: 35%;
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 40px 30px;
+        }
+
+        .main-content {
+            width: 65%;
+            padding: 40px;
+            color: #333;
+        }
+
+        /* Photo Upload Styling */
+        .photo-upload-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .photo-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #ffffff33;
+            margin: 0 auto;
+            border: 2px dashed #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .photo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-circle span {
+            font-size: 12px;
+            padding: 10px;
+        }
+
+        /* Section Headings */
+        .sidebar h2 {
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 30px;
+        }
+
+        .main-content h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 40px;
+            color: var(--accent-color);
+        }
+
+        /* Editor Inputs */
+        input, textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .sidebar input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .sidebar input::placeholder { color: #ccc; }
+
+        /* Add Button Style */
+        .add-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .add-btn:hover { background: #45a049; }
+
+        /* Remove Button */
+        .remove-btn {
+            color: #ff4d4d;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: underline;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        /* Experience Timeline Style */
+        .experience-item {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .experience-item .year {
+            font-weight: bold;
+            color: #777;
+            font-size: 14px;
+        }
+
+        /* Action Buttons Bar */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border-radius: 25px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .btn-primary { background: #2196f3; color: white; }
+        .btn-success { background: #4caf50; color: white; }
+        .btn-edit { background: #ff9800; color: white; }
+
+        /* Preview specific styles */
+        #preview-page .sidebar { background-color: var(--sidebar-bg); }
+        #preview-page h1 { font-size: 40px; margin: 0; text-transform: uppercase; }
+        #preview-page .subtitle { font-size: 20px; color: #666; margin-bottom: 20px; }
+        
+        .preview-text { margin-bottom: 5px; white-space: pre-line; }
+        .preview-bold { font-weight: bold; }
+        .preview-entry { margin-bottom: 20px; }
+
+        .color-picker-label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="editor-page">
+        <div class="resume-body">
+            <div class="sidebar">
+                <div class="photo-upload-container">
+                    <label class="color-picker-label">Sidebar Theme Color:</label>
+                    <input type="color" id="colorPicker" value="#3a4856" style="height: 40px; padding: 2px;">
+                    
+                    <div class="photo-circle" onclick="document.getElementById('photoInput').click()">
+                        <img id="profileImg" src="" class="hidden">
+                        <span id="uploadPlaceholder">Click to upload photo</span>
+                    </div>
+                    <input type="file" id="photoInput" class="hidden" accept="image/*">
+                </div>
+
+                <h2>Contact</h2>
+                <input type="text" id="phone" placeholder="Phone (e.g. 123-456-7890)">
+                <input type="text" id="email" placeholder="Email (e.g. hello@site.com)">
+                <input type="text" id="address" placeholder="Address (e.g. 123 Street, City)">
+
+                <h2>Education</h2>
+                <div id="education-fields"></div>
+                <button class="add-btn" onclick="addField('education')">+</button>
+
+                <h2>Expertise</h2>
+                <div id="expertise-fields"></div>
+                <button class="add-btn" onclick="addField('expertise')">+</button>
+
+                <h2>Language</h2>
+                <div id="language-fields"></div>
+                <button class="add-btn" onclick="addField('language')">+</button>
+            </div>
+
+            <div class="main-content">
+                <input type="text" id="fullName" placeholder="Full Name" style="font-size: 32px; font-weight: bold;">
+                <input type="text" id="jobTitle" placeholder="Job Title" style="font-size: 20px;">
+                
+                <textarea id="summary" placeholder="Summary: Lorem ipsum dolor sit amet, consectetur adipiscing elit..."></textarea>
+
+                <h2>Experience</h2>
+                <div id="experience-fields"></div>
+                <button class="add-btn" onclick="addField('experience')">+</button>
+
+                <h2>Reference</h2>
+                <div id="reference-fields"></div>
+                <button class="add-btn" onclick="addField('reference')">+</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="generatePreview()">Preview Resume</button>
+        </div>
+    </div>
+
+    <div class="container hidden" id="preview-page">
+        <div class="resume-body" id="pdf-content">
+            <div class="sidebar" id="preview-sidebar">
+                <div class="photo-upload-container">
+                    <div class="photo-circle" style="border: none;">
+                        <img id="preview-profileImg" src="">
+                    </div>
+                </div>
+
+                <h2>Contact</h2>
+                <p class="preview-text" id="p-phone"></p>
+                <p class="preview-text" id="p-email"></p>
+                <p class="preview-text" id="p-address"></p>
+
+                <h2>Education</h2>
+                <div id="p-education"></div>
+
+                <h2>Expertise</h2>
+                <ul id="p-expertise" style="padding-left: 20px;"></ul>
+
+                <h2>Language</h2>
+                <ul id="p-language" style="padding-left: 20px;"></ul>
+            </div>
+
+            <div class="main-content">
+                <h1 id="p-fullName"></h1>
+                <div class="subtitle" id="p-jobTitle"></div>
+                <p id="p-summary"></p>
+
+                <h2>Experience</h2>
+                <div id="p-experience"></div>
+
+                <h2>Reference</h2>
+                <div id="p-reference" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-edit" onclick="goBack()">Edit</button>
+            <button class="btn btn-success" onclick="downloadPDF()">Download PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // Photo Upload Logic
+        const photoInput = document.getElementById('photoInput');
+        const profileImg = document.getElementById('profileImg');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+
+        photoInput.onchange = function(e) {
+            const [file] = photoInput.files;
+            if (file) {
+                profileImg.src = URL.createObjectURL(file);
+                profileImg.classList.remove('hidden');
+                uploadPlaceholder.classList.add('hidden');
+            }
+        };
+
+        // Color Picker Logic
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--sidebar-bg', e.target.value);
+            document.documentElement.style.setProperty('--accent-color', e.target.value);
+        });
+
+        // Dynamic Fields Logic
+        function addField(section) {
+            const container = document.getElementById(`${section}-fields`);
+            const div = document.createElement('div');
+            div.className = 'dynamic-entry';
+            
+            let html = '';
+            if (section === 'education') {
+                html = `
+                    <input type="text" placeholder="Years (e.g. 2020-2023)" class="edu-year">
+                    <input type="text" placeholder="Degree / Course" class="edu-degree">
+                    <input type="text" placeholder="University / School" class="edu-school">
+                `;
+            } else if (section === 'expertise' || section === 'language') {
+                html = `<input type="text" placeholder="Skill/Language" class="${section}-item">`;
+            } else if (section === 'experience') {
+                html = `
+                    <input type="text" placeholder="Years (e.g. 2022-2025)" class="exp-year">
+                    <input type="text" placeholder="Company Name & City" class="exp-company">
+                    <input type="text" placeholder="Job Role" class="exp-role">
+                    <textarea placeholder="Job Description" class="exp-desc"></textarea>
+                `;
+            } else if (section === 'reference') {
+                html = `
+                    <input type="text" placeholder="Reference Name" class="ref-name">
+                    <input type="text" placeholder="Company / Title" class="ref-title">
+                    <input type="text" placeholder="Phone" class="ref-phone">
+                    <input type="text" placeholder="Email" class="ref-email">
+                `;
+            }
+            
+            html += `<span class="remove-btn" onclick="this.parentElement.remove()">Remove</span>`;
+            div.innerHTML = html;
+            container.appendChild(div);
+        }
+
+        // Preview Logic
+        function generatePreview() {
+            // Map Basic Info
+            document.getElementById('p-fullName').innerText = document.getElementById('fullName').value;
+            document.getElementById('p-jobTitle').innerText = document.getElementById('jobTitle').value;
+            document.getElementById('p-summary').innerText = document.getElementById('summary').value;
+            document.getElementById('p-phone').innerText = "Phone: " + document.getElementById('phone').value;
+            document.getElementById('p-email').innerText = "Email: " + document.getElementById('email').value;
+            document.getElementById('p-address').innerText = "Address: " + document.getElementById('address').value;
+            
+            // Map Photo
+            document.getElementById('preview-profileImg').src = profileImg.src;
+
+            // Map Education
+            const pEdu = document.getElementById('p-education');
+            pEdu.innerHTML = '';
+            document.querySelectorAll('.dynamic-entry').forEach(entry => {
+                if(entry.querySelector('.edu-year')) {
+                    pEdu.innerHTML += `
+                        <div class="preview-entry">
+                            <div class="preview-bold">${entry.querySelector('.edu-year').value}</div>
+                            <div class="preview-bold">${entry.querySelector('.edu-degree').value}</div>
+                            <div>${entry.querySelector('.edu-school').value}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Map Expertise
+            const pExp = document.getElementById('p-expertise');
+            pExp.innerHTML = '';
+            document.querySelectorAll('.expertise-item').forEach(item => {
+                if(item.value) pExp.innerHTML += `<li>${item.value}</li>`;
+            });
+
+            // Map Languages
+            const pLang = document.getElementById('p-language');
+            pLang.innerHTML = '';
+            document.querySelectorAll('.language-item').forEach(item => {
+                if(item.value) pLang.innerHTML += `<li>${item.value}</li>`;
+            });
+
+            // Map Experience
+            const pWork = document.getElementById('p-experience');
+            pWork.innerHTML = '';
+            document.querySelectorAll('.dynamic-entry').forEach(entry => {
+                if(entry.querySelector('.exp-year')) {
+                    pWork.innerHTML += `
+                        <div class="preview-entry">
+                            <div class="preview-bold" style="color:#777">${entry.querySelector('.exp-year').value}</div>
+                            <div class="preview-bold">${entry.querySelector('.exp-company').value}</div>
+                            <div class="preview-bold" style="font-style:italic">${entry.querySelector('.exp-role').value}</div>
+                            <div style="margin-top:5px">${entry.querySelector('.exp-desc').value}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Map References
+            const pRef = document.getElementById('p-reference');
+            pRef.innerHTML = '';
+            document.querySelectorAll('.dynamic-entry').forEach(entry => {
+                if(entry.querySelector('.ref-name')) {
+                    pRef.innerHTML += `
+                        <div class="preview-entry">
+                            <div class="preview-bold">${entry.querySelector('.ref-name').value}</div>
+                            <div>${entry.querySelector('.ref-title').value}</div>
+                            <div>Phone: ${entry.querySelector('.ref-phone').value}</div>
+                            <div>Email: ${entry.querySelector('.ref-email').value}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('editor-page').classList.add('hidden');
+            document.getElementById('preview-page').classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function goBack() {
+            document.getElementById('preview-page').classList.add('hidden');
+            document.getElementById('editor-page').classList.remove('hidden');
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdf-content');
+            const opt = {
+                margin: 0,
+                filename: 'Resume_' + document.getElementById('fullName').value + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+    </script>
+</body>
+</html>

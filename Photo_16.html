@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <style>
+        :root {
+            --theme-color: #3d4b5a; /* Default Navy */
+            --sidebar-color: #707e8c;
+            --bg-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        body { background: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+
+        /* UI Controls */
+        .toolbar {
+            width: 800px; background: #fff; padding: 15px; margin-bottom: 20px;
+            border-radius: 8px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .color-picker { display: flex; align-items: center; gap: 10px; }
+        
+        /* Resume Sheet */
+        .resume-container {
+            width: 800px; min-height: 1130px; background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2); position: relative;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .top-accent { background: var(--theme-color); height: 60px; width: 100%; }
+        
+        .main-layout { display: flex; flex-grow: 1; }
+
+        /* Sidebar (Left) */
+        .sidebar { width: 35%; background: var(--sidebar-color); display: flex; justify-content: center; padding-top: 40px; }
+        
+        .photo-box {
+            width: 220px; height: 250px; background: #f0f0f0; border: 2px dashed #bbb;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; position: relative; overflow: hidden;
+        }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .photo-box span { font-size: 12px; font-weight: bold; color: #666; text-align: center; }
+
+        /* Content (Right) */
+        .content { width: 65%; padding: 40px 30px; }
+
+        input, textarea { 
+            border: 1px solid transparent; width: 100%; padding: 4px; 
+            background: transparent; outline: none; transition: 0.2s;
+        }
+        input:hover, textarea:hover { border: 1px solid #ddd; background: #f9f9f9; }
+
+        .name-input { font-size: 42px; font-weight: bold; color: var(--theme-color); text-transform: uppercase; }
+        .job-title-input { font-size: 18px; color: #555; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; }
+        
+        .contact-row { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
+        .icon-circle { 
+            background: var(--theme-color); color: white; width: 24px; height: 24px; 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px;
+        }
+
+        .section-title { 
+            font-size: 22px; font-weight: bold; color: var(--theme-color); 
+            border-bottom: 2px solid #eee; margin: 25px 0 10px 0; text-transform: uppercase;
+        }
+
+        /* Dynamic Item Styling */
+        .item-group { position: relative; margin-bottom: 10px; padding-right: 30px; }
+        .subheading { font-weight: bold; font-size: 14px; margin-top: 5px; }
+        .bullet-point { font-size: 13px; margin-left: 15px; display: list-item; list-style-type: disc; }
+
+        .add-btn { 
+            background: #4caf50; color: white; border: none; width: 24px; height: 24px; 
+            border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 24px; margin-top: 5px;
+        }
+        .del-btn { 
+            position: absolute; right: 0; top: 5px; color: #ff5252; cursor: pointer; 
+            font-weight: bold; display: none;
+        }
+        .item-group:hover .del-btn { display: block; }
+
+        .bottom-accent { background: var(--theme-color); height: 80px; width: 100%; margin-top: auto; }
+
+        /* Buttons */
+        .btn { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-preview { background: var(--theme-color); color: white; }
+
+        /* Preview Overlay */
+        #preview-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; overflow-y: auto; padding: 40px 0;
+        }
+        .preview-actions { margin-bottom: 20px; display: flex; gap: 20px; }
+        .btn-edit { background: #607d8b; color: white; }
+        .btn-download { background: #4caf50; color: white; }
+
+        /* Print/Preview Logic */
+        .preview-mode .add-btn, .preview-mode .del-btn, .preview-mode input::placeholder { display: none !important; }
+        .preview-mode input, .preview-mode textarea { border: none !important; pointer-events: none; }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .toolbar, #preview-modal .preview-actions { display: none !important; }
+            #preview-modal { position: static; background: white; padding: 0; display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="color-picker">
+            <label>Theme Color:</label>
+            <input type="color" id="themeColor" value="#3d4b5a" onchange="updateTheme(this.value)">
+        </div>
+        <button class="btn btn-preview" onclick="openPreview()">Preview & Download</button>
+    </div>
+
+    <div id="resume-sheet" class="resume-container">
+        <div class="top-accent"></div>
+        <div class="main-layout">
+            <div class="sidebar">
+                <div class="photo-box" onclick="document.getElementById('fileInput').click()">
+                    <div id="upload-hint">
+                        <span>UPLOAD PHOTO</span>
+                        <div style="font-size: 40px; margin-top: 10px;">👤</div>
+                    </div>
+                    <img id="display-photo">
+                    <input type="file" id="fileInput" hidden accept="image/*" onchange="loadPhoto(event)">
+                </div>
+            </div>
+            
+            <div class="content">
+                <input type="text" class="name-input" placeholder="YOUR NAME">
+                <input type="text" class="job-title-input" placeholder="JOB TITLE">
+                
+                <div class="contact-area">
+                    <div class="contact-row"><div class="icon-circle">📞</div><input type="text" placeholder="+00 000 000 000"></div>
+                    <div class="contact-row"><div class="icon-circle">✉</div><input type="text" placeholder="email@address.com"></div>
+                    <div class="contact-row"><div class="icon-circle">🌐</div><input type="text" placeholder="www.yourwebsite.com"></div>
+                    <div class="contact-row"><div class="icon-circle">📍</div><input type="text" placeholder="City, Country"></div>
+                </div>
+
+                <div class="section-title">Profile</div>
+                <textarea rows="4" placeholder="Write your professional summary here..."></textarea>
+
+                <div class="section-title">Education</div>
+                <div id="edu-container"></div>
+                <button class="add-btn" onclick="addItem('edu-container', 'subheading', 'Degree / University')">+</button>
+
+                <div class="section-title">Work Experience</div>
+                <div id="work-container"></div>
+                <button class="add-btn" onclick="addItem('work-container', 'subheading', 'Job Title / Company')">+</button>
+
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <div class="section-title">Skills</div>
+                        <div id="skills-container"></div>
+                        <button class="add-btn" onclick="addItem('skills-container', 'bullet-point', 'Skill Name')">+</button>
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="section-title">Languages</div>
+                        <div id="lang-container"></div>
+                        <button class="add-btn" onclick="addItem('lang-container', 'bullet-point', 'Language Name')">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-accent"></div>
+    </div>
+
+    <div id="preview-modal">
+        <div class="preview-actions">
+            <button class="btn btn-edit" onclick="closePreview()">EDIT</button>
+            <button class="btn btn-download" onclick="window.print()">DOWNLOAD PDF</button>
+        </div>
+        <div id="preview-content"></div>
+    </div>
+
+    <script>
+        function updateTheme(color) {
+            document.documentElement.style.setProperty('--theme-color', color);
+        }
+
+        function loadPhoto(event) {
+            const output = document.getElementById('display-photo');
+            const hint = document.getElementById('upload-hint');
+            output.src = URL.createObjectURL(event.target.files[0]);
+            output.style.display = 'block';
+            hint.style.display = 'none';
+        }
+
+        function addItem(containerId, className, placeholder) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'item-group';
+            
+            // If it's a subheading, we also allow adding bullets under it
+            if(className === 'subheading') {
+                div.innerHTML = `
+                    <input type="text" class="subheading" placeholder="${placeholder}">
+                    <div class="bullet-list"></div>
+                    <button class="add-btn" style="font-size:12px; width:20px; height:20px; line-height:20px;" onclick="addBullet(this)">+</button>
+                    <span class="del-btn" onclick="this.parentElement.remove()">✕</span>
+                `;
+            } else {
+                div.innerHTML = `
+                    <input type="text" class="${className}" placeholder="${placeholder}">
+                    <span class="del-btn" onclick="this.parentElement.remove()">✕</span>
+                `;
+            }
+            container.appendChild(div);
+        }
+
+        function addBullet(btn) {
+            const list = btn.previousElementSibling;
+            const bDiv = document.createElement('div');
+            bDiv.className = 'item-group';
+            bDiv.innerHTML = `
+                <input type="text" class="bullet-point" placeholder="Specific detail or task">
+                <span class="del-btn" onclick="this.parentElement.remove()">✕</span>
+            `;
+            list.appendChild(bDiv);
+        }
+
+        function openPreview() {
+            const modal = document.getElementById('preview-modal');
+            const previewContent = document.getElementById('preview-content');
+            const source = document.getElementById('resume-sheet');
+            
+            // Clone the resume
+            const clone = source.cloneNode(true);
+            
+            // Copy input/textarea values manually (cloneNode doesn't copy current values)
+            const originals = source.querySelectorAll('input, textarea');
+            const clones = clone.querySelectorAll('input, textarea');
+            originals.forEach((el, i) => {
+                clones[i].value = el.value;
+                // If it has a value, make it permanent text for cleaner PDF
+                if(el.value === "") clones[i].placeholder = ""; 
+            });
+
+            clone.classList.add('preview-mode');
+            previewContent.innerHTML = '';
+            previewContent.appendChild(clone);
+            modal.style.display = 'flex';
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

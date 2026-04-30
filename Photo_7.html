@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced CV Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-tan: #d9cec6;
+            --text-gray: #7a6e67;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- TOOLBAR --- */
+        #toolbar {
+            width: 100%;
+            background: #fff;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #preview-btn { background: #7a6e67; color: white; }
+        #edit-btn { background: #555; color: white; display: none; }
+        #download-btn { background: #c5b5aa; color: white; display: none; }
+
+        /* --- DYNAMIC UI CONTROLS --- */
+        .controls-ui {
+            display: inline-flex;
+            gap: 5px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .action-btn {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-btn { background: #27ae60; }
+        .rem-btn { background: #e74c3c; }
+
+        .add-section-btn {
+            margin-top: 20px;
+            padding: 8px 15px;
+            background: #7a6e67;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- CV CANVAS --- */
+        #cv-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 30px 0;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            color: var(--text-gray);
+            display: flex;
+            padding: 80px 60px;
+            gap: 50px;
+        }
+
+        .banner-top, .banner-bottom {
+            position: absolute;
+            left: 0; width: 100%; height: 50px;
+            background-color: var(--primary-tan);
+        }
+        .banner-top { top: 0; }
+        .banner-bottom { bottom: 0; }
+
+        .col-left { width: 35%; z-index: 2; }
+        .col-right { width: 65%; z-index: 2; }
+
+        .photo-box {
+            width: 220px; height: 250px;
+            background: #eee; margin-bottom: 30px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: 1px solid #ddd;
+        }
+        #user-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #upload-txt { font-size: 12px; color: #999; }
+
+        .name-box h1 { font-size: 44px; font-weight: normal; margin: 0; line-height: 1; }
+        .job-title { font-size: 14px; letter-spacing: 2px; margin-top: 15px; text-transform: uppercase; }
+
+        /* Sections */
+        .section { margin-bottom: 30px; position: relative; }
+        .section-header {
+            font-size: 22px; display: flex; align-items: center;
+            gap: 8px; margin-bottom: 15px; text-transform: uppercase;
+        }
+        .section-header::before { content: "•"; color: var(--primary-tan); font-size: 28px; }
+
+        .text-content { font-size: 13px; line-height: 1.8; color: #555; }
+        .entry-item { margin-bottom: 15px; position: relative; }
+        .item-head { font-weight: bold; font-size: 14px; }
+        .item-sub { font-size: 12px; color: #777; }
+
+        /* --- PREVIEW MODE --- */
+        body.preview-mode { background: #ddd; }
+        .preview-mode #toolbar #preview-btn { display: none; }
+        .preview-mode #toolbar #edit-btn, .preview-mode #toolbar #download-btn { display: inline-block; }
+        .preview-mode .controls-ui, .preview-mode .add-section-btn { display: none !important; }
+        .preview-mode [contenteditable="true"] { pointer-events: none; outline: none; }
+
+        [contenteditable="true"]:hover { background: rgba(0,0,0,0.02); }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <button id="preview-btn" class="btn" onclick="toggleView(true)">Preview</button>
+        <button id="edit-btn" class="btn" onclick="toggleView(false)">Back to Edit</button>
+        <button id="download-btn" class="btn" onclick="saveAsPDF()">Download PDF</button>
+    </div>
+
+    <div id="cv-container">
+        <div class="banner-top"></div>
+        <div class="banner-bottom"></div>
+
+        <div class="col-left" id="left-col">
+            <div class="photo-box" onclick="document.getElementById('input-file').click()">
+                <div id="upload-txt">Upload Photo</div>
+                <img id="user-img" src="" alt="Profile">
+                <input type="file" id="input-file" hidden onchange="handlePhoto(this)">
+            </div>
+
+            <div class="name-box">
+                <h1 contenteditable="true">Cahaya Dewi</h1>
+                <div class="job-title" contenteditable="true">Social Media Specialist</div>
+            </div>
+
+            <div class="section" style="margin-top:40px;">
+                <div class="section-header">
+                    <span contenteditable="true">PROFILE</span>
+                </div>
+                <div class="text-content" contenteditable="true">
+                    Add your summary here.
+                </div>
+            </div>
+
+            <button class="add-section-btn" onclick="addNewSection('left-col')">+ Add Heading</button>
+        </div>
+
+        <div class="col-right" id="right-col">
+            <div class="section">
+                <div class="section-header">
+                    <span contenteditable="true">WORK EXPERIENCE</span>
+                    <div class="controls-ui">
+                        <button class="action-btn add-btn" onclick="addItem(this, 'experience')">+</button>
+                    </div>
+                </div>
+                <div class="content-list">
+                    <div class="entry-item">
+                        <div class="item-head" contenteditable="true">Job Position</div>
+                        <div class="item-sub" contenteditable="true">Company Name (Year)</div>
+                        <div class="text-content" contenteditable="true">• Responsibility point</div>
+                        <div class="controls-ui"><button class="action-btn rem-btn" onclick="this.closest('.entry-item').remove()">-</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="add-section-btn" onclick="addNewSection('right-col')">+ Add Heading</button>
+        </div>
+    </div>
+
+    <script>
+        // Photo upload
+        function handlePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('user-img').src = e.target.result;
+                    document.getElementById('user-img').style.display = 'block';
+                    document.getElementById('upload-txt').style.display = 'none';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Add Entire New Section (Heading)
+        function addNewSection(columnId) {
+            const col = document.getElementById(columnId);
+            const btn = col.querySelector('.add-section-btn');
+            
+            const section = document.createElement('div');
+            section.className = 'section';
+            section.innerHTML = `
+                <div class="section-header">
+                    <span contenteditable="true">NEW HEADING</span>
+                    <div class="controls-ui">
+                        <button class="action-btn add-btn" onclick="addItem(this, 'bullet')">+</button>
+                        <button class="action-btn rem-btn" onclick="this.closest('.section').remove()">-</button>
+                    </div>
+                </div>
+                <div class="content-list">
+                    <div class="text-content" contenteditable="true">Click "+" to add points or type here.</div>
+                </div>
+            `;
+            col.insertBefore(section, btn);
+        }
+
+        // Add Items within sections (Points or blocks)
+        function addItem(btn, type) {
+            const list = btn.closest('.section').querySelector('.content-list');
+            const div = document.createElement('div');
+            
+            if (type === 'experience') {
+                div.className = 'entry-item';
+                div.innerHTML = `
+                    <div class="item-head" contenteditable="true">New Position</div>
+                    <div class="item-sub" contenteditable="true">Company (Year)</div>
+                    <div class="text-content" contenteditable="true">• Detail point</div>
+                    <div class="controls-ui"><button class="action-btn rem-btn" onclick="this.closest('.entry-item').remove()">-</button></div>`;
+            } else {
+                div.className = 'text-content';
+                div.style.display = 'flex';
+                div.style.gap = '5px';
+                div.innerHTML = `
+                    <span contenteditable="true">• New bullet point</span>
+                    <div class="controls-ui"><button class="action-btn rem-btn" onclick="this.closest('.text-content').remove()">-</button></div>`;
+            }
+            list.appendChild(div);
+        }
+
+        function toggleView(isPreview) {
+            document.body.classList.toggle('preview-mode', isPreview);
+            document.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = !isPreview);
+        }
+
+        function saveAsPDF() {
+            const element = document.getElementById('cv-container');
+            html2pdf().set({ margin:0, filename:'CV.pdf', html2canvas:{scale:2}, jsPDF:{format:'a4'} }).from(element).save();
+        }
+    </script>
+</body>
+</html>

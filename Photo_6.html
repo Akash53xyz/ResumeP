@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Pro CV Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-accent: #b0b0b0;
+            --sidebar-bg: #000000;
+            --top-bg: #e6e6e6;
+            --text-main: #333;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Helvetica, sans-serif;
+            background-color: #4a4a4a;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- CONTROL BAR --- */
+        #controls {
+            width: 100%;
+            background: #fff;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        #preview-trigger { background: #333; color: white; }
+        #edit-trigger { background: #666; color: white; display: none; }
+        #download-trigger { background: #be9d56; color: white; display: none; }
+
+        .theme-swatch {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-right: 2px solid #eee;
+            padding-right: 20px;
+        }
+
+        .color-dot {
+            width: 24px; height: 24px; border-radius: 50%;
+            cursor: pointer; border: 2px solid #fff; outline: 1px solid #ccc;
+        }
+
+        /* --- CV MAIN CANVAS --- */
+        #cv-canvas {
+            width: 210mm;
+            min-height: 297mm;
+            background: #fff;
+            margin: 30px 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        /* Header Area */
+        .cv-header {
+            height: 200px;
+            background-color: var(--top-bg);
+            padding-left: 350px;
+            display: flex;
+            align-items: center;
+        }
+
+        .name-section h1 {
+            font-size: 48px;
+            margin: 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .name-section .sub-title {
+            font-size: 20px;
+            letter-spacing: 5px;
+            color: #555;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 2px solid #000;
+            display: inline-block;
+        }
+
+        /* Photo Area (Hexagon) */
+        .photo-container {
+            position: absolute;
+            top: 25px;
+            left: 45px;
+            width: 260px;
+            height: 300px;
+            background-color: var(--primary-accent);
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .photo-inner {
+            width: 95%;
+            height: 95%;
+            background: #ddd;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #profile-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #upload-hint { font-weight: bold; color: #777; font-size: 14px; text-align: center; }
+
+        /* Columns */
+        .cv-columns { display: flex; flex: 1; }
+
+        .cv-sidebar {
+            width: 32%;
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            padding: 220px 30px 40px 30px;
+        }
+
+        .cv-main {
+            width: 68%;
+            padding: 40px 50px;
+            color: var(--text-main);
+        }
+
+        /* Content Styles */
+        .section-h {
+            font-size: 19px;
+            font-weight: bold;
+            margin: 25px 0 15px 0;
+            text-transform: uppercase;
+        }
+
+        .cv-sidebar .section-h { border-bottom: 1px solid #444; padding-bottom: 5px; }
+
+        .text-block { font-size: 13px; line-height: 1.6; margin-bottom: 15px; }
+        .cv-sidebar .text-block { color: #bbb; }
+
+        .edu-flex { display: flex; justify-content: space-between; gap: 20px; }
+        .exp-item { margin-bottom: 20px; }
+        .bold-title { font-weight: bold; font-size: 14px; margin: 0; }
+        .italic-sub { font-style: italic; font-size: 13px; color: #666; margin-bottom: 5px; }
+
+        /* Progress Bars (Languages) */
+        .bar-wrap { background: #333; height: 6px; width: 100%; margin: 8px 0 15px 0; }
+        .bar-val { background: #888; height: 100%; width: 80%; }
+
+        /* Skills Grid */
+        .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; }
+
+        /* --- MODES --- */
+        [contenteditable="true"] { outline: none; border-radius: 3px; }
+        [contenteditable="true"]:hover { background: rgba(0,0,0,0.05); }
+        .cv-sidebar [contenteditable="true"]:hover { background: rgba(255,255,255,0.1); }
+
+        /* Preview State Styles */
+        body.preview-mode { background: #eee; }
+        .preview-mode #controls .theme-swatch,
+        .preview-mode #controls #preview-trigger { display: none; }
+        .preview-mode #controls #edit-trigger,
+        .preview-mode #controls #download-trigger { display: inline-block; }
+        .preview-mode [contenteditable="true"] { pointer-events: none; }
+        .preview-mode #cv-canvas { margin-top: 10px; box-shadow: none; }
+        .preview-mode .photo-container { cursor: default; }
+
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <div class="theme-swatch">
+            <span style="font-size: 14px; font-weight: bold;">Theme:</span>
+            <div class="color-dot" style="background: #e6e6e6;" onclick="setColors('#b0b0b0', '#000', '#e6e6e6')"></div>
+            <div class="color-dot" style="background: #2c3e50;" onclick="setColors('#3498db', '#2c3e50', '#d6eaf8')"></div>
+            <div class="color-dot" style="background: #1a0521;" onclick="setColors('#9b59b6', '#1a0521', '#ebdef0')"></div>
+        </div>
+
+        <button id="preview-trigger" class="btn" onclick="toggleMode(true)">Preview</button>
+        <button id="edit-trigger" class="btn" onclick="toggleMode(false)">Edit</button>
+        <button id="download-trigger" class="btn" onclick="doDownload()">Download PDF</button>
+    </div>
+
+    <div id="cv-canvas">
+        <div class="photo-container" onclick="document.getElementById('file-picker').click()">
+            <div class="photo-inner">
+                <div id="upload-hint">CLICK TO<br>UPLOAD</div>
+                <img id="profile-img" src="" alt="Profile">
+                <input type="file" id="file-picker" hidden accept="image/*" onchange="previewImage(this)">
+            </div>
+        </div>
+
+        <div class="cv-header">
+            <div class="name-section">
+                <h1 contenteditable="true">CAHAYA DEWI</h1>
+                <div class="sub-title" contenteditable="true">MARKETING EXPERT</div>
+            </div>
+        </div>
+
+        <div class="cv-columns">
+            <div class="cv-sidebar">
+                <div class="section-h" contenteditable="true">CONTACT</div>
+                <div class="text-block" contenteditable="true">
+                    📞 +123-456-7890<br><br>
+                    🌐 www.reallygreatsite.com<br><br>
+                    ✉️ hello@reallygreatsite.com<br><br>
+                    📍 123 Anywhere St., Any City
+                </div>
+
+                <div class="section-h" contenteditable="true">LANGUAGES</div>
+                <div class="text-block">
+                    <span contenteditable="true">• Spanish</span>
+                    <div class="bar-wrap"><div class="bar-val" style="width: 90%;"></div></div>
+                    <span contenteditable="true">• French</span>
+                    <div class="bar-wrap"><div class="bar-val" style="width: 70%;"></div></div>
+                </div>
+            </div>
+
+            <div class="cv-main">
+                <div class="section-h" contenteditable="true">PROFILE</div>
+                <div class="text-block" contenteditable="true">
+                    Marketing Expert with over 8 years of experience designing and implementing digital and traditional marketing strategies. Proven track record of increasing brand awareness by up to 70% and increasing annual sales by over 35%. Expertise in market research, campaign management, SEO, content marketing, and ROI optimization.
+                </div>
+
+                <div class="section-h" contenteditable="true">EDUCATION</div>
+                <div class="edu-flex">
+                    <div style="width: 48%;">
+                        <p class="bold-title" contenteditable="true">BACHELOR OF MARKETING</p>
+                        <p class="italic-sub" contenteditable="true">Liceria University (1998-2003)</p>
+                    </div>
+                    <div style="width: 48%;">
+                        <p class="bold-title" contenteditable="true">MASTER OF MARKETING</p>
+                        <p class="italic-sub" contenteditable="true">Rimberio University (2003-2005)</p>
+                    </div>
+                </div>
+
+                <div class="section-h" contenteditable="true">WORK EXPERIENCE</div>
+                <div class="exp-item">
+                    <p class="bold-title" contenteditable="true">SENIOR MARKETING EXPERT</p>
+                    <p class="italic-sub" contenteditable="true">Arowwai Industries (2005-2009)</p>
+                    <div class="text-block" contenteditable="true">
+                        • Designed and implemented an integrated marketing strategy that increased annual sales by 38%.<br>
+                        • Increased website traffic by 65% through SEO optimization.
+                    </div>
+                </div>
+
+                <div class="exp-item">
+                    <p class="bold-title" contenteditable="true">DIGITAL MARKETING MANAGER</p>
+                    <p class="italic-sub" contenteditable="true">Wardiere Inc. (2009-2013)</p>
+                    <div class="text-block" contenteditable="true">
+                        • Developed a social media strategy that increased engagement rates by 120%.<br>
+                        • Managed Google Ads campaigns with an average CTR of 5.2%.
+                    </div>
+                </div>
+
+                <div class="section-h" contenteditable="true">SKILLS</div>
+                <div class="skills-grid" contenteditable="true">
+                    <div>• Digital Marketing Strategy</div>
+                    <div>• Team Management</div>
+                    <div>• Ad Campaigns (Google/Meta)</div>
+                    <div>• Email Automation</div>
+                    <div>• Market Research</div>
+                    <div>• Data Analysis</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Image Logic: Hide text ONLY when image is loaded
+        function previewImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('profile-img');
+                    const hint = document.getElementById('upload-hint');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    hint.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 2. Theme Logic
+        function setColors(accent, side, top) {
+            document.documentElement.style.setProperty('--primary-accent', accent);
+            document.documentElement.style.setProperty('--sidebar-bg', side);
+            document.documentElement.style.setProperty('--top-bg', top);
+        }
+
+        // 3. Mode Toggle Logic
+        function toggleMode(isPreview) {
+            const body = document.body;
+            const edits = document.querySelectorAll('[contenteditable]');
+            
+            if (isPreview) {
+                body.classList.add('preview-mode');
+                edits.forEach(el => el.contentEditable = "false");
+            } else {
+                body.classList.remove('preview-mode');
+                edits.forEach(el => el.contentEditable = "true");
+            }
+        }
+
+        // 4. PDF Download Logic
+        function doDownload() {
+            const element = document.getElementById('cv-canvas');
+            const opt = {
+                margin: 0,
+                filename: 'My_Professional_CV.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Re-run to ensure clean capture
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

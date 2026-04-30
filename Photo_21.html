@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --accent-color: #4a4e54;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e9ecef;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* --- Toolbar --- */
+        .controls {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+        }
+
+        /* --- Resume Structure --- */
+        #resume-to-print {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .profile-pic-container {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 4px solid white;
+            overflow: hidden;
+            background: #666;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .profile-pic-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-pic-container span {
+            font-size: 12px;
+            text-align: center;
+            color: #ddd;
+        }
+
+        .header-text {
+            flex: 1;
+        }
+
+        .header-text input {
+            display: block;
+            background: transparent;
+            border: none;
+            color: white;
+            width: 100%;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        .name-input { font-size: 50px; font-weight: bold; }
+        .job-input { font-size: 22px; margin-top: 10px; opacity: 0.9; }
+
+        .main-body {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            flex-grow: 1;
+        }
+
+        .left-col { background-color: #fcfcfc; padding: 30px; border-right: 1px solid #eee; }
+        .right-col { padding: 30px; }
+
+        /* --- Content Blocks --- */
+        section { margin-bottom: 25px; }
+        
+        h2 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .item-row input, .item-row textarea {
+            width: 100%;
+            border: 1px dashed transparent;
+            padding: 4px;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+        }
+
+        .item-row input:focus { border-color: #aaa; }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        .remove-btn {
+            color: red;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+        }
+
+        .item-row:hover .remove-btn { display: inline; }
+
+        /* --- Preview Logic --- */
+        #preview-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #525659;
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 40px 0;
+        }
+
+        .preview-top-bar {
+            position: fixed;
+            top: 0; width: 100%;
+            background: #323639;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 2001;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-edit { background: #ffc107; color: #000; }
+        .btn-pdf { background: #007bff; color: #fff; }
+
+        /* Hide buttons in Preview/PDF */
+        .preview-mode .add-btn, 
+        .preview-mode .remove-btn,
+        .preview-mode input::placeholder {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <label>Pick Theme Color:</label>
+        <input type="color" id="colorPicker" value="#4a4e54" oninput="changeColor(this.value)">
+        <button class="btn btn-pdf" onclick="enterPreview()">Preview</button>
+    </div>
+
+    <div id="resume-to-print">
+        <header id="resumeHeader">
+            <div class="profile-pic-container" onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" hidden accept="image/*" onchange="handleImage(this)">
+                <img id="userPhoto" style="display:none;">
+                <span id="photoText">Click to<br>Upload Photo</span>
+            </div>
+            <div class="header-text">
+                <input type="text" class="name-input" placeholder="YOUR NAME">
+                <input type="text" class="job-input" placeholder="Job">
+            </div>
+        </header>
+
+        <div class="main-body">
+            <div class="left-col">
+                <section>
+                    <h2>Contact</h2>
+                    <div id="contact-list"></div>
+                    <button class="add-btn" onclick="addNewRow('contact-list', 'Address/Email/Phone')">+</button>
+                </section>
+                <section>
+                    <h2>Education</h2>
+                    <div id="edu-list"></div>
+                    <button class="add-btn" onclick="addNewRow('edu-list', '2020-2023 | Degree Name')">+</button>
+                </section>
+                <section>
+                    <h2>Skills</h2>
+                    <div id="skill-list"></div>
+                    <button class="add-btn" onclick="addNewRow('skill-list', '• Skill Name')">+</button>
+                </section>
+            </div>
+
+            <div class="right-col">
+                <section>
+                    <h2>About Me</h2>
+                    <div class="item-row">
+                        <textarea placeholder="Write a brief profile description here..." rows="4"></textarea>
+                    </div>
+                </section>
+                <section>
+                    <h2>Experience</h2>
+                    <div id="exp-list"></div>
+                    <button class="add-btn" onclick="addNewRow('exp-list', 'Company | Role | Description')">+</button>
+                </section>
+                <section>
+                    <h2>References</h2>
+                    <div id="ref-list" style="display: grid; grid-template-columns: 1fr 1fr;"></div>
+                    <button class="add-btn" onclick="addNewRow('ref-list', 'Name | Contact Info')">+</button>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="preview-overlay">
+        <div class="preview-top-bar">
+            <button class="btn btn-edit" onclick="exitPreview()">Edit</button>
+            <button class="btn btn-pdf" onclick="downloadPDF()">Download PDF</button>
+        </div>
+        <div id="preview-container" style="display: flex; justify-content: center; margin-top: 50px;"></div>
+    </div>
+
+    <script>
+        // Change Theme Color
+        function changeColor(val) {
+            document.getElementById('resumeHeader').style.backgroundColor = val;
+        }
+
+        // Handle Photo Upload
+        function handleImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('userPhoto').src = e.target.result;
+                    document.getElementById('userPhoto').style.display = 'block';
+                    document.getElementById('photoText').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Dynamic Row Addition
+        function addNewRow(containerId, placeholder) {
+            const container = document.getElementById(containerId);
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <input type="text" placeholder="${placeholder}">
+                <span class="remove-btn" onclick="this.parentElement.remove()">✕</span>
+            `;
+            container.appendChild(row);
+        }
+
+        // Preview Mode
+        function enterPreview() {
+            const resume = document.getElementById('resume-to-print');
+            const previewContainer = document.getElementById('preview-container');
+            
+            // Clone the resume
+            const clone = resume.cloneNode(true);
+            clone.classList.add('preview-mode');
+
+            // Copy input values manually (cloning doesn't keep input values)
+            const originalInputs = resume.querySelectorAll('input, textarea');
+            const clonedInputs = clone.querySelectorAll('input, textarea');
+            
+            originalInputs.forEach((input, index) => {
+                clonedInputs[index].value = input.value;
+                // If in preview and field is empty, hide it
+                if(!input.value && input.type !== "file") {
+                    clonedInputs[index].parentElement.style.display = 'none';
+                }
+            });
+
+            previewContainer.innerHTML = '';
+            previewContainer.appendChild(clone);
+            document.getElementById('preview-overlay').style.display = 'block';
+        }
+
+        function exitPreview() {
+            document.getElementById('preview-overlay').style.display = 'none';
+        }
+
+        // PDF Generation
+        function downloadPDF() {
+            const element = document.querySelector('#preview-container #resume-to-print');
+            const opt = {
+                margin: 0,
+                filename: 'Professional_Resume.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

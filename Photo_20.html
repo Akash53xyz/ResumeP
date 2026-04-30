@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noah Style Resume Builder</title>
+    <style>
+        :root {
+            --bg-color: #f4f1ea;
+            --accent-color: #000000;
+            --text-color: #333;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            background-color: #d1d1d1;
+            margin: 0;
+            font-family: 'Helvetica', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            width: 100%;
+            background: white;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-preview { background: #27ae60; color: white; }
+        .btn-edit { background: #2980b9; color: white; display: none; }
+        .btn-download { background: #e67e22; color: white; display: none; }
+        
+        .add-btn {
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Resume Canvas */
+        #resume-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: var(--bg-color);
+            margin: 30px;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        /* Header Contact */
+        .contact-header {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            border-bottom: 1.5px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Name Section */
+        .name-section input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-family: 'Georgia', serif;
+            font-size: 80px;
+            text-align: center;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .divider { border-bottom: 1.5px solid var(--accent-color); margin-bottom: 30px; }
+
+        /* Main Content Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        /* Photo Area */
+        .photo-box {
+            width: 300px;
+            height: 350px;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 5px;
+            position: relative;
+            cursor: pointer;
+        }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .update-photo-btn { font-weight: bold; color: #555; }
+
+        /* Job Section */
+        .job-section h2 { margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .job-input { font-size: 24px; font-weight: bold; border: none; background: transparent; text-transform: uppercase; width: 100%; }
+
+        /* Skills Pills */
+        .skill-item {
+            border: 1.5px solid var(--accent-color);
+            border-radius: 25px;
+            padding: 8px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .skill-item input { border: none; background: transparent; width: 90%; }
+
+        /* Generic Inputs */
+        input, textarea { border: 1px dashed transparent; outline: none; width: 100%; }
+        input:hover, textarea:hover { border-color: #ccc; }
+        
+        h3 { text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 5px; display: flex; align-items: center; }
+
+        /* Modes */
+        .preview-mode .add-btn, .preview-mode .toolbar-item, .preview-mode .update-photo-btn { display: none !important; }
+        .preview-mode input, .preview-mode textarea { border: none !important; pointer-events: none; }
+        .preview-mode .btn-preview { display: none; }
+        .preview-mode .btn-edit, .preview-mode .btn-download { display: block; }
+
+        @media print {
+            .toolbar { display: none; }
+            #resume-container { margin: 0; box-shadow: none; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar" id="toolbar">
+        <div class="toolbar-item">
+            Theme: <input type="color" id="themePicker" value="#f4f1ea">
+        </div>
+        <button class="btn btn-preview" onclick="setMode(true)">Preview</button>
+        <button class="btn btn-edit" onclick="setMode(false)">Edit</button>
+        <button class="btn btn-download" onclick="window.print()">Download PDF</button>
+    </div>
+
+    <div id="resume-container">
+        <div class="contact-header">
+            <input type="text" placeholder="📧 Email Address" style="width: 200px">
+            <input type="text" placeholder="📞 Phone Number" style="width: 150px">
+            <input type="text" placeholder="📍 Location" style="width: 200px">
+        </div>
+
+        <div class="name-section">
+            <input type="text" placeholder="Name">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="main-layout">
+            <div class="left-col">
+                <div class="photo-box" onclick="document.getElementById('imgInp').click()">
+                    <span class="update-photo-btn" id="photoText">UPDATE PHOTO</span>
+                    <img id="profileImg">
+                    <input type="file" id="imgInp" hidden accept="image/*" onchange="previewImg(this)">
+                </div>
+
+                <div class="section">
+                    <h3>• Professional Experience <button class="add-btn" onclick="addExperience()">+</button></h3>
+                    <div id="exp-container"></div>
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="job-section">
+                    <input type="text" placeholder="Job" class="job-input">
+                    <textarea rows="4" placeholder="Visionary profile description goes here..."></textarea>
+                </div>
+
+                <div class="divider" style="margin: 20px 0;"></div>
+
+                <div class="section">
+                    <h3>Skills <button class="add-btn" onclick="addSkill()">+</button></h3>
+                    <div id="skills-container"></div>
+                </div>
+
+                <div class="section">
+                    <h3>• Education <button class="add-btn" onclick="addEdu()">+</button></h3>
+                    <div id="edu-container"></div>
+                </div>
+
+                <div class="section">
+                    <h3>• Reference <button class="add-btn" onclick="addRef()">+</button></h3>
+                    <div id="ref-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Color
+        document.getElementById('themePicker').addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--bg-color', e.target.value);
+        });
+
+        // Image Handling
+        function previewImg(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('profileImg');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    document.getElementById('photoText').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Dynamic Elements
+        function addSkill() {
+            const div = document.createElement('div');
+            div.className = 'skill-item';
+            div.innerHTML = `<input type="text" placeholder="• New Skill">`;
+            document.getElementById('skills-container').appendChild(div);
+        }
+
+        function addExperience() {
+            const div = document.createElement('div');
+            div.style.marginBottom = '15px';
+            div.innerHTML = `
+                <input type="text" placeholder="Job Title" style="font-weight:bold">
+                <input type="text" placeholder="Dates | Company Name" style="font-style:italic; font-size:13px">
+                <textarea rows="2" placeholder="• Key achievement..."></textarea>
+            `;
+            document.getElementById('exp-container').appendChild(div);
+        }
+
+        function addEdu() {
+            const div = document.createElement('div');
+            div.style.marginBottom = '10px';
+            div.innerHTML = `
+                <input type="text" placeholder="Degree Name" style="font-weight:bold">
+                <input type="text" placeholder="University | 20XX-20XX">
+            `;
+            document.getElementById('edu-container').appendChild(div);
+        }
+
+        function addRef() {
+            const div = document.createElement('div');
+            div.innerHTML = `<input type="text" placeholder="• Reference Name & Contact">`;
+            document.getElementById('ref-container').appendChild(div);
+        }
+
+        // Mode Switching
+        function setMode(isPreview) {
+            if (isPreview) {
+                document.body.classList.add('preview-mode');
+            } else {
+                document.body.classList.remove('preview-mode');
+            }
+        }
+
+        // Initialize with one field each
+        addExperience();
+        addSkill();
+        addEdu();
+        addRef();
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Resume Builder</title>
+    <style>
+        :root {
+            --primary-color: #634732;
+            --secondary-color: #333333;
+            --bg-light: #ffffff;
+            --text-main: #000000;
+            --text-alt: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            width: 100%;
+            padding: 15px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .toolbar input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-preview { background-color: var(--primary-color); color: white; }
+        .btn-download { background-color: #27ae60; color: white; }
+        .btn-edit { background-color: #7f8c8d; color: white; }
+        .btn-add { 
+            background: var(--primary-color); 
+            color: white; 
+            border-radius: 50%; 
+            width: 25px; 
+            height: 25px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 18px;
+            margin-top: 5px;
+        }
+
+        /* Resume Container */
+        #resume-canvas {
+            width: 800px;
+            min-height: 1000px;
+            background: white;
+            margin: 40px 0;
+            display: flex;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        /* Left Side */
+        .left-panel {
+            width: 65%;
+            padding: 40px;
+            background: white;
+        }
+
+        /* Right Side */
+        .right-panel {
+            width: 35%;
+            background-color: var(--secondary-color);
+            color: var(--text-alt);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header Style (The Ribbons) */
+        .header-ribbon {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 40px;
+            margin-left: -50px;
+            position: relative;
+            display: inline-block;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            clip-path: polygon(10% 0, 100% 0, 90% 50%, 100% 100%, 10% 100%, 0% 50%);
+        }
+
+        .section { margin-bottom: 30px; }
+
+        /* Inputs */
+        input, textarea {
+            width: 100%;
+            border: 1px dashed #ccc;
+            padding: 5px;
+            margin-bottom: 5px;
+            font-family: inherit;
+            resize: none;
+        }
+
+        .right-panel input {
+            background: transparent;
+            color: white;
+            border-color: #555;
+        }
+
+        /* Photo Upload */
+        .photo-container {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            border: 5px solid var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-placeholder {
+            color: #ccc;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Preview Mode Tweaks */
+        .preview-mode .btn-add, 
+        .preview-mode input[type="file"],
+        .preview-mode .toolbar-edit { display: none; }
+        
+        .preview-mode input, 
+        .preview-mode textarea {
+            border: none;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        .preview-mode .right-panel input { color: white; }
+
+        #action-buttons {
+            display: none;
+            gap: 10px;
+        }
+
+        @media print {
+            .toolbar, .btn-add { display: none !important; }
+            body { background: white; }
+            #resume-canvas { margin: 0; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar" id="top-toolbar">
+        <div>
+            Theme Color: <input type="color" id="colorPicker" value="#634732">
+        </div>
+        <button class="btn btn-preview" onclick="togglePreview()">Preview</button>
+        <div id="action-buttons">
+            <button class="btn btn-edit" onclick="togglePreview()">Edit</button>
+            <button class="btn btn-download" onclick="window.print()">Download PDF</button>
+        </div>
+    </div>
+
+    <div id="resume-canvas">
+        <div class="left-panel">
+            <div class="section">
+                <div class="header-ribbon">Profile</div>
+                <textarea placeholder="Write your profile here..." rows="4"></textarea>
+            </div>
+
+            <div class="section" id="exp-section">
+                <div class="header-ribbon">Experience</div>
+                <div class="items-container"></div>
+                <button class="btn btn-add" onclick="addItem('exp-section')">+</button>
+            </div>
+
+            <div class="section" id="skills-section">
+                <div class="header-ribbon">Skills</div>
+                <div class="items-container"></div>
+                <button class="btn btn-add" onclick="addItem('skills-section')">+</button>
+            </div>
+
+            <div class="section" id="ref-section">
+                <div class="header-ribbon">References</div>
+                <div class="items-container"></div>
+                <button class="btn btn-add" onclick="addItem('ref-section')">+</button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="photo-container" onclick="document.getElementById('fileInput').click()">
+                <div class="photo-placeholder" id="plus-text">CLICK TO<br>UPLOAD PHOTO</div>
+                <img id="profile-img" style="display:none">
+            </div>
+            <input type="file" id="fileInput" hidden accept="image/*" onchange="loadPhoto(event)">
+
+            <input type="text" placeholder="YOUR NAME" style="font-size: 28px; font-weight: bold; text-align: center;">
+            <input type="text" placeholder="Job Title" style="text-align: center; border-bottom: 2px solid var(--primary-color); margin-bottom: 30px;">
+
+            <div class="section" style="width: 100%;">
+                <h3 style="border-left: 5px solid var(--primary-color); padding-left: 10px;">Contact</h3>
+                <input type="text" placeholder="Phone Number">
+                <input type="text" placeholder="Email Address">
+                <input type="text" placeholder="Address">
+            </div>
+
+            <div class="section" id="edu-section" style="width: 100%;">
+                <h3 style="border-left: 5px solid var(--primary-color); padding-left: 10px;">Education</h3>
+                <div class="items-container"></div>
+                <button class="btn btn-add" onclick="addItem('edu-section')">+</button>
+            </div>
+
+            <div class="section" id="lang-section" style="width: 100%;">
+                <h3 style="border-left: 5px solid var(--primary-color); padding-left: 10px;">Languages</h3>
+                <div class="items-container"></div>
+                <button class="btn btn-add" onclick="addItem('lang-section')">+</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Color Change Logic
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--primary-color', e.target.value);
+        });
+
+        // Photo Upload Logic
+        function loadPhoto(event) {
+            const output = document.getElementById('profile-img');
+            const plusText = document.getElementById('plus-text');
+            output.src = URL.createObjectURL(event.target.files[0]);
+            output.style.display = 'block';
+            plusText.style.display = 'none';
+        }
+
+        // Add Dynamic Fields
+        function addItem(sectionId) {
+            const container = document.querySelector(`#${sectionId} .items-container`);
+            const div = document.createElement('div');
+            div.style.marginBottom = "10px";
+            
+            if (sectionId === 'exp-section') {
+                div.innerHTML = `
+                    <input type="text" placeholder="Company / Job Title" style="font-weight:bold">
+                    <textarea placeholder="Bullet points..."></textarea>
+                `;
+            } else if (sectionId === 'skills-section' || sectionId === 'lang-section') {
+                div.innerHTML = `<input type="text" placeholder="• Skill / Language">`;
+            } else if (sectionId === 'edu-section') {
+                div.innerHTML = `
+                    <input type="text" placeholder="University Name" style="font-weight:bold">
+                    <input type="text" placeholder="Degree / Year">
+                `;
+            } else {
+                div.innerHTML = `<textarea placeholder="Reference details..."></textarea>`;
+            }
+            container.appendChild(div);
+        }
+
+        // Preview Toggle
+        function togglePreview() {
+            const body = document.body;
+            const toolbar = document.getElementById('top-toolbar');
+            const actionButtons = document.getElementById('action-buttons');
+            const previewBtn = document.querySelector('.btn-preview');
+
+            if (body.classList.contains('preview-mode')) {
+                body.classList.remove('preview-mode');
+                actionButtons.style.display = 'none';
+                previewBtn.style.display = 'block';
+                colorPicker.parentElement.style.display = 'block';
+            } else {
+                body.classList.add('preview-mode');
+                actionButtons.style.display = 'flex';
+                previewBtn.style.display = 'none';
+                colorPicker.parentElement.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

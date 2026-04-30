@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional CV Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #000000;
+            --bg-color: #ffffff;
+            --text-on-light: #222222;
+            --text-on-dark: #ffffff;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --padding-col: 40px;
+        }
+
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 20px;
+            background-color: #525659; /* Classic PDF viewer background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- Toolbar Styles --- */
+        #toolbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            padding: 10px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .tool-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-preview { background: #007bff; color: white; }
+        .btn-edit { background: #28a745; color: white; display: none; } /* Hidden by default */
+        .btn-download { background: #dc3545; color: white; display: none; } /* Hidden by default */
+
+        #color-picker-wrapper { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+
+        /* --- Resume Layout --- */
+        #cv-template {
+            width: 210mm;
+            min-height: 297mm;
+            background-color: var(--bg-color);
+            display: flex;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            margin-top: 60px; /* Space for toolbar */
+        }
+
+        .left-col {
+            width: 38%;
+            background-color: var(--primary-color);
+            color: var(--text-on-dark);
+            padding: 50px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .right-col {
+            width: 62%;
+            background-color: var(--bg-color);
+            color: var(--text-on-light);
+            padding: 40px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Photo Section */
+        .photo-container {
+            width: 180px;
+            height: 180px;
+            border: 6px solid #ffffff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        #profile-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        #upload-text {
+            color: white;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 10px;
+        }
+
+        /* Typography & Structure */
+        .section-title {
+            text-transform: uppercase;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid white;
+            padding-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .name { font-size: 2.8rem; font-weight: 800; text-transform: uppercase; margin: 0; line-height: 1; }
+        .job-title { font-size: 1.4rem; text-transform: uppercase; margin: 5px 0 0 0; color: #555; }
+
+        .black-bar {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .corner-accent {
+            width: 120px;
+            height: 60px;
+            background: var(--primary-color);
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        ul { list-style: disc; padding-left: 20px; margin: 0; }
+        li { margin-bottom: 8px; }
+
+        .contact-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .contact-item svg { width: 18px; fill: white; }
+
+        /* --- Editing Tools (Hidden in Preview) --- */
+        .edit-controls {
+            display: inline-flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .add-btn, .remove-btn {
+            border: none;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .add-btn { background: #28a745; color: white; }
+        .remove-btn { background: #dc3545; color: white; }
+
+        .add-section-btn {
+            margin-top: 10px;
+            background: none;
+            border: 1px dashed #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* PREVIEW MODE LOGIC */
+        body.preview-mode .edit-controls,
+        body.preview-mode .add-section-btn,
+        body.preview-mode #color-picker-wrapper,
+        body.preview-mode .remove-btn,
+        body.preview-mode #upload-text {
+            display: none !important;
+        }
+
+        body.preview-mode [contenteditable] {
+            outline: none;
+        }
+
+        body.preview-mode .photo-container {
+            cursor: default;
+        }
+        
+        /* Ensure photo container looks clean if empty in preview */
+        body.preview-mode .photo-container:not(:has(img[style*="display: block"])) {
+            background-color: transparent;
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <div id="color-picker-wrapper">
+        <span>Color:</span>
+        <input type="color" id="color-picker" value="#000000">
+    </div>
+    <button class="tool-btn btn-preview" onclick="enablePreview()">Preview</button>
+    <button class="tool-btn btn-edit" id="edit-btn" onclick="enableEdit()">Edit</button>
+    <button class="tool-btn btn-download" id="download-btn" onclick="downloadPDF()">Download PDF</button>
+</div>
+
+<div id="cv-template">
+    <div class="left-col">
+        <label for="file-input" class="photo-container">
+            <span id="upload-text">UPLOAD PHOTO</span>
+            <img id="profile-img" src="" alt="Profile">
+            <input type="file" id="file-input" hidden accept="image/*" onchange="handleImage(this)">
+        </label>
+
+        <div class="section">
+            <h2 class="section-title">Certifications</h2>
+            <ul id="cert-list">
+                <li><span contenteditable="true">Digital Marketing Specialization</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button></li>
+                <li><span contenteditable="true">HubSpot Content Marketing</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button></li>
+            </ul>
+            <button class="add-section-btn" onclick="addItem('cert-list')">+ Add Certification</button>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Contact</h2>
+            <div class="contact-item">
+                <svg viewBox="0 0 24 24"><path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
+                <span contenteditable="true">+123-456-7890</span>
+            </div>
+            <div class="contact-item">
+                <svg viewBox="0 0 24 24"><path d="M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4M20,18H4V8L12,13L20,8V18M20,6L12,11L4,6H20Z"/></svg>
+                <span contenteditable="true">hello@reallygreatsite.com</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-col">
+        <div class="corner-accent"></div>
+        <header>
+            <h1 class="name" contenteditable="true">KORINA VILLANUEVA</h1>
+            <p class="job-title" contenteditable="true">Digital Marketing</p>
+        </header>
+
+        <div class="section">
+            <div class="black-bar">Skills</div>
+            <ul id="skills-list">
+                <li><span contenteditable="true">Search Engine Optimization (SEO)</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button></li>
+                <li><span contenteditable="true">Social Media Strategy</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button></li>
+            </ul>
+            <button class="add-section-btn" onclick="addItem('skills-list')">+ Add Skill</button>
+        </div>
+
+        <div class="section">
+            <div class="black-bar">Experience</div>
+            <div id="experience-container">
+                <div class="exp-item" style="margin-bottom: 20px; position: relative;">
+                    <button class="remove-btn" style="position: absolute; right: 0;" onclick="this.parentElement.remove()">Remove Job</button>
+                    <p><strong><span contenteditable="true">Digital Marketing Specialist</span></strong></p>
+                    <ul class="exp-points">
+                        <li><span contenteditable="true">Planned and executed Google Ads campaigns with ROAS above 400%</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button></li>
+                    </ul>
+                    <button class="add-btn" onclick="addPoint(this)">+ Point</button>
+                </div>
+            </div>
+            <button class="add-section-btn" onclick="addExperience()">+ Add Job Position</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Mode Switching ---
+    function enablePreview() {
+        document.body.classList.add('preview-mode');
+        document.querySelector('.btn-preview').style.display = 'none';
+        document.getElementById('edit-btn').style.display = 'block';
+        document.getElementById('download-btn').style.display = 'block';
+        
+        // Disable contenteditable
+        document.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = "false");
+    }
+
+    function enableEdit() {
+        document.body.classList.remove('preview-mode');
+        document.querySelector('.btn-preview').style.display = 'block';
+        document.getElementById('edit-btn').style.display = 'none';
+        document.getElementById('download-btn').style.display = 'none';
+        
+        // Enable contenteditable
+        document.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = "true");
+    }
+
+    // --- Image Handling ---
+    function handleImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('profile-img');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById('upload-text').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- Color Picker ---
+    document.getElementById('color-picker').addEventListener('input', (e) => {
+        document.documentElement.style.setProperty('--primary-color', e.target.value);
+    });
+
+    // --- Dynamic Content Functions ---
+    function addItem(listId) {
+        const list = document.getElementById(listId);
+        const li = document.createElement('li');
+        li.innerHTML = `<span contenteditable="true">New Item</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button>`;
+        list.appendChild(li);
+    }
+
+    function addPoint(btn) {
+        const list = btn.previousElementSibling;
+        const li = document.createElement('li');
+        li.innerHTML = `<span contenteditable="true">New achievement point</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button>`;
+        list.appendChild(li);
+    }
+
+    function addExperience() {
+        const container = document.getElementById('experience-container');
+        const div = document.createElement('div');
+        div.className = 'exp-item';
+        div.style = "margin-bottom: 20px; position: relative;";
+        div.innerHTML = `
+            <button class="remove-btn" style="position: absolute; right: 0;" onclick="this.parentElement.remove()">Remove Job</button>
+            <p><strong><span contenteditable="true">Job Title / Company</span></strong></p>
+            <ul class="exp-points">
+                <li><span contenteditable="true">Point 1</span> <button class="remove-btn" onclick="this.parentElement.remove()">-</button></li>
+            </ul>
+            <button class="add-btn" onclick="addPoint(this)">+ Point</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // --- PDF Download ---
+    function downloadPDF() {
+        const element = document.getElementById('cv-template');
+        const opt = {
+            margin:       0,
+            filename:     'My_CV.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        // Start download
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>

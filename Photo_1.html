@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-bg: #34495e;
+        }
+
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            margin: 0;
+            background: #cbd5e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Toolbar Styles */
+        .toolbar {
+            width: 100%;
+            background: #2d3748;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .swatch {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-download { background: #48bb78; color: white; }
+        .btn-preview { background: #4299e1; color: white; }
+        button:hover { opacity: 0.8; }
+
+        /* Resume Layout */
+        #resume-area {
+            background: white;
+            width: 850px;
+            min-height: 1100px;
+            margin: 40px 0;
+            display: flex;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .sidebar {
+            width: 32%;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 40px 25px;
+            transition: background 0.3s;
+        }
+
+        .photo-box {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            margin: 0 auto 30px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 3px solid white;
+        }
+
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .photo-box span { font-size: 14px; text-align: center; color: #fff; padding: 10px; }
+
+        .main-content {
+            width: 68%;
+            padding: 0;
+        }
+
+        .name-banner {
+            background: #e2e8f0;
+            padding: 50px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .name-banner h1 { margin: 0; font-size: 40px; letter-spacing: 2px; color: #2d3748; }
+        .name-banner p { margin: 10px 0 0; font-size: 18px; color: #4a5568; }
+
+        .content-padding { padding: 0 40px 40px 40px; }
+
+        h3 { border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; color: #2d3748; }
+        .sidebar h3 { color: white; border-color: rgba(255,255,255,0.3); }
+
+        [contenteditable="true"]:focus {
+            outline: 2px solid #4299e1;
+            background: rgba(66, 153, 225, 0.05);
+        }
+
+        /* Hide UI elements on Preview/PDF */
+        .preview-mode .toolbar { display: none; }
+        .preview-mode #resume-area { margin: 0; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span>Theme:</span>
+            <div class="swatch" style="background:#34495e" onclick="setColor('#34495e')"></div>
+            <div class="swatch" style="background:#2c3e50" onclick="setColor('#2c3e50')"></div>
+            <div class="swatch" style="background:#1a365d" onclick="setColor('#1a365d')"></div>
+            <div class="swatch" style="background:#285e61" onclick="setColor('#285e61')"></div>
+        </div>
+        <button class="btn-preview" onclick="togglePreview()" id="prevBtn">PREVIEW MODE</button>
+        <button class="btn-download" onclick="downloadPDF()">DOWNLOAD PDF</button>
+    </div>
+
+    <div id="resume-area">
+        <aside class="sidebar">
+            <div class="photo-box" onclick="document.getElementById('fileIn').click()">
+                <img id="displayImg" src="">
+                <span id="uploadTxt">CLICK TO<br>UPLOAD PHOTO</span>
+            </div>
+            <input type="file" id="fileIn" hidden accept="image/*" onchange="handleImage(event)">
+
+            <h3 contenteditable="true">SKILLS</h3>
+            <div contenteditable="true">
+                <ul style="padding-left: 20px;">
+                    <li>Adobe InDesign</li>
+                    <li>Responsive Layout Design</li>
+                    <li>Logo & Icon Design</li>
+                </ul>
+            </div>
+
+            <h3 style="margin-top:40px;">CONTACT</h3>
+            <div contenteditable="true" style="font-size: 14px; line-height: 2;">
+                <strong>PHONE:</strong><br> +123-456-7890<br><br>
+                <strong>EMAIL:</strong><br> hello@reallygreatsite.com<br><br>
+                <strong>SOCIAL:</strong><br> @reallygreatsite
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="name-banner">
+                <h1 contenteditable="true">DANIEL GALLEGO</h1>
+                <p contenteditable="true">• GRAPHIC DESIGNER</p>
+            </div>
+
+            <div class="content-padding">
+                <section>
+                    <h3>ABOUT ME</h3>
+                    <p contenteditable="true">I am a passionate and detail-oriented Graphic Designer with [X] years of experience creating visual content for digital and print media.</p>
+                </section>
+
+                <section style="margin-top:30px;">
+                    <h3>EXPERIENCE</h3>
+                    <div contenteditable="true">
+                        <strong>ABC Creative Studio – Jakarta | 2020 – Present</strong>
+                        <ul style="padding-left: 20px;">
+                            <li>Designed visual assets and marketing materials for 30+ clients.</li>
+                            <li>Led the redesign of 5 major corporate brand identities.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section style="margin-top:30px;">
+                    <h3>EDUCATION</h3>
+                    <div contenteditable="true">
+                        <strong>Bachelor of Fine Arts – Graphic Design</strong><br>
+                        XYZ University, Jakarta | 20XX – 20XX
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Photo Upload
+        function handleImage(e) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const img = document.getElementById('displayImg');
+                img.src = reader.result;
+                img.style.display = 'block';
+                document.getElementById('uploadTxt').style.display = 'none';
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+
+        // Color Change
+        function setColor(color) {
+            document.documentElement.style.setProperty('--sidebar-bg', color);
+        }
+
+        // Preview Logic
+        function togglePreview() {
+            const isPreview = document.body.classList.toggle('preview-mode');
+            document.getElementById('prevBtn').innerText = isPreview ? "EDIT MODE" : "PREVIEW MODE";
+        }
+
+        // Real PDF Download
+        function downloadPDF() {
+            const element = document.getElementById('resume-area');
+            const opt = {
+                margin:       0,
+                filename:     'My_Resume.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            // New Promise-based usage:
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

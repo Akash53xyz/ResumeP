@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Arch Resume Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --resume-bg: #f3f0eb; /* Default cream background */
+            --text-main: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #d1d1d1;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Container for the paper */
+        .page-container {
+            width: 850px;
+            background: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            min-height: 1100px;
+            position: relative;
+        }
+
+        /* --- EDITOR STYLING --- */
+        #editor-view {
+            padding: 50px;
+        }
+
+        .editor-header {
+            border-bottom: 2px solid #000;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; color: #666; }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .dynamic-entry {
+            background: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ff4d4d;
+            cursor: pointer;
+            font-size: 12px;
+            border: 1px solid #ff4d4d;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .add-btn {
+            background: #000;
+            color: #fff;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 22px;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .add-btn:hover { transform: scale(1.1); }
+
+        /* --- RESUME PREVIEW STYLING (Matches the Photo) --- */
+        #preview-view {
+            background-color: var(--resume-bg);
+            padding: 80px 60px;
+            color: var(--text-main);
+            min-height: 1050px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .resume-header {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        /* The Arch Photo */
+        .arch-photo-box {
+            width: 280px;
+            height: 360px;
+            background: #e0e0e0;
+            border-radius: 140px 140px 0 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arch-photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .name-section h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 72px;
+            text-transform: uppercase;
+            margin: 0;
+            line-height: 0.85;
+            font-weight: 400;
+        }
+
+        .name-divider {
+            height: 1px;
+            background: #000;
+            margin: 25px 0;
+            width: 100%;
+        }
+
+        .title-display {
+            font-family: 'Playfair Display', serif;
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+
+        .summary-display {
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 450px;
+            color: #333;
+        }
+
+        .resume-body {
+            display: grid;
+            grid-template-columns: 1fr 1px 1fr;
+            gap: 50px;
+            margin-top: 60px;
+            position: relative;
+        }
+
+        .vertical-divider {
+            background: #000;
+            height: 100%;
+            position: relative;
+        }
+
+        .v-icon {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--resume-bg);
+            padding: 5px;
+        }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 34px;
+            font-weight: 400;
+            margin: 0 0 30px 0;
+        }
+
+        .preview-entry { margin-bottom: 30px; }
+        .preview-entry strong { display: block; font-size: 17px; margin-bottom: 5px; font-family: 'Playfair Display', serif; }
+        .preview-entry span { display: block; font-size: 13px; color: #555; margin-bottom: 8px; }
+        .preview-entry p { font-size: 13px; line-height: 1.5; margin: 0; }
+
+        /* Footer Pill bar */
+        .footer-pill {
+            background: #000;
+            color: #fff;
+            border-radius: 100px;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            position: absolute;
+            bottom: 60px;
+            left: 60px;
+            right: 60px;
+            font-size: 13px;
+        }
+
+        .footer-pill div { display: flex; align-items: center; gap: 10px; }
+
+        /* Bottom Action Buttons */
+        .action-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-preview { background: #000; color: #fff; }
+        .btn-edit { background: #fff; color: #000; border: 1px solid #000; }
+        .btn-download { background: #000; color: #fff; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <div id="editor-view">
+            <div class="editor-header">
+                <h2 style="font-family: sans-serif; font-weight: bold; margin:0;">Resume Details</h2>
+                <div style="text-align: right;">
+                    <label>Page Background</label>
+                    <input type="color" id="bg-color-picker" value="#f3f0eb" style="width:50px; height:30px; cursor:pointer;">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Arch Photo</label>
+                <input type="file" id="photo-upload" accept="image/*">
+            </div>
+
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="in-name" placeholder="Akash Taria">
+            </div>
+
+            <div class="input-group">
+                <label>Professional Title</label>
+                <input type="text" id="in-title" placeholder="Digital Marketer">
+            </div>
+
+            <div class="input-group">
+                <label>Summary</label>
+                <textarea id="in-summary" placeholder="I am a creative thinker..."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label style="color:#000; border-bottom: 1px solid #ddd; padding-bottom:5px;">Experience</label>
+                <div id="exp-container"></div>
+                <button class="add-btn" onclick="addDynamic('exp')">+</button>
+            </div>
+
+            <div class="input-group">
+                <label style="color:#000; border-bottom: 1px solid #ddd; padding-bottom:5px;">Education</label>
+                <div id="edu-container"></div>
+                <button class="add-btn" onclick="addDynamic('edu')">+</button>
+            </div>
+
+            <div class="input-group">
+                <label style="color:#000; border-bottom: 1px solid #ddd; padding-bottom:5px;">Skills</label>
+                <div id="skill-container"></div>
+                <button class="add-btn" onclick="addDynamic('skill')">+</button>
+            </div>
+
+            <div class="input-group">
+                <label>Contact (Footer)</label>
+                <input type="text" id="in-phone" placeholder="+91 45667 7890">
+                <input type="text" id="in-email" placeholder="hello@reallygreatsite.com">
+                <input type="text" id="in-web" placeholder="www.reallygreatsite.com">
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="btn btn-preview" onclick="toggleView('preview')">Preview Resume</button>
+            </div>
+        </div>
+
+        <div id="preview-view" class="hidden">
+            <div id="capture-area">
+                <div class="resume-header">
+                    <div class="arch-photo-box">
+                        <img id="out-photo" src="" style="display:none;">
+                        <span id="photo-msg">NO PHOTO</span>
+                    </div>
+                    <div class="name-section">
+                        <h1 id="out-name">NAME</h1>
+                        <div class="name-divider"></div>
+                        <div class="title-display" id="out-title">TITLE</div>
+                        <p class="summary-display" id="out-summary"></p>
+                    </div>
+                </div>
+
+                <div class="resume-body">
+                    <div>
+                        <h2>Experience</h2>
+                        <div id="out-exp"></div>
+                    </div>
+
+                    <div class="vertical-divider">
+                        <div class="v-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="black">
+                                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div>
+                            <h2>Education</h2>
+                            <div id="out-edu"></div>
+                        </div>
+                        <div style="margin-top: 50px;">
+                            <h2>Skills</h2>
+                            <div id="out-skills"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-pill">
+                    <div id="out-phone"></div>
+                    <div id="out-email"></div>
+                    <div id="out-web"></div>
+                </div>
+            </div>
+
+            <div class="action-controls">
+                <button class="btn btn-edit" onclick="toggleView('edit')">Edit</button>
+                <button class="btn btn-download" onclick="downloadPDF()">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let photoData = "";
+
+        // Handle Photo Upload
+        document.getElementById('photo-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    photoData = event.target.result;
+                    document.getElementById('out-photo').src = photoData;
+                    document.getElementById('out-photo').style.display = 'block';
+                    document.getElementById('photo-msg').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle Color Choice
+        document.getElementById('bg-color-picker').addEventListener('input', function(e) {
+            document.documentElement.style.setProperty('--resume-bg', e.target.value);
+        });
+
+        // Add Dynamic Fields
+        function addDynamic(type) {
+            const container = document.getElementById(`${type}-container`);
+            const div = document.createElement('div');
+            div.className = 'dynamic-entry';
+            
+            let html = `<span class="remove-btn" onclick="this.parentElement.remove()">Remove</span>`;
+            
+            if (type === 'exp') {
+                html += `
+                    <input type="text" placeholder="Company Name" class="val-1">
+                    <input type="text" placeholder="Role | Date (e.g. Manager | 2024)" class="val-2">
+                    <textarea placeholder="Bullet points / Description" class="val-3"></textarea>
+                `;
+            } else if (type === 'edu') {
+                html += `
+                    <input type="text" placeholder="Institution Name" class="val-1">
+                    <input type="text" placeholder="Date (e.g. 2018-2022)" class="val-2">
+                    <input type="text" placeholder="Degree Type" class="val-3">
+                `;
+            } else if (type === 'skill') {
+                html += `<input type="text" placeholder="Skill Name (e.g. SEO)" class="val-1">`;
+            }
+
+            div.innerHTML = html;
+            container.appendChild(div);
+        }
+
+        // Switch View and Populate Data
+        function toggleView(mode) {
+            if (mode === 'preview') {
+                // Populate Text
+                document.getElementById('out-name').innerText = document.getElementById('in-name').value || 'NAME';
+                document.getElementById('out-title').innerText = document.getElementById('in-title').value || 'TITLE';
+                document.getElementById('out-summary').innerText = document.getElementById('in-summary').value;
+                document.getElementById('out-phone').innerText = document.getElementById('in-phone').value;
+                document.getElementById('out-email').innerText = document.getElementById('in-email').value;
+                document.getElementById('out-web').innerText = document.getElementById('in-web').value;
+
+                // Populate Lists
+                renderList('exp', 'out-exp');
+                renderList('edu', 'out-edu');
+                renderList('skill', 'out-skills');
+
+                document.getElementById('editor-view').classList.add('hidden');
+                document.getElementById('preview-view').classList.remove('hidden');
+                window.scrollTo(0,0);
+            } else {
+                document.getElementById('editor-view').classList.remove('hidden');
+                document.getElementById('preview-view').classList.add('hidden');
+            }
+        }
+
+        function renderList(type, outputId) {
+            const output = document.getElementById(outputId);
+            output.innerHTML = '';
+            const entries = document.querySelectorAll(`#${type}-container .dynamic-entry`);
+            
+            entries.forEach(entry => {
+                const v1 = entry.querySelector('.val-1').value;
+                const v2 = entry.querySelector('.val-2')?.value || "";
+                const v3 = entry.querySelector('.val-3')?.value || "";
+
+                if (type === 'skill') {
+                    output.innerHTML += `<div class="preview-entry"><strong>• ${v1}</strong></div>`;
+                } else {
+                    output.innerHTML += `
+                        <div class="preview-entry">
+                            <strong>• ${v1}</strong>
+                            <span>${v2}</span>
+                            <p>${v3.replace(/\n/g, '<br>')}</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // PDF Generation
+        function downloadPDF() {
+            const element = document.getElementById('capture-area');
+            const opt = {
+                margin: 0,
+                filename: 'Professional_Resume.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 3, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Add initial empty fields
+        addDynamic('exp');
+        addDynamic('edu');
+        addDynamic('skill');
+    </script>
+</body>
+</html>

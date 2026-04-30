@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Professional Template</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --sidebar-color: #8b9485; /* Olive Green from photo */
+            --main-bg: #fdfaf3;      /* Cream from photo */
+            --header-bg: #e5e7e1;    /* Light Sage from photo */
+            --text-dark: #444;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; margin: 0; background: #ddd; }
+
+        /* Toolbar */
+        .toolbar {
+            background: #333; padding: 10px; display: flex; 
+            justify-content: center; gap: 20px; position: sticky; top: 0; z-index: 1000;
+        }
+        .btn { padding: 8px 15px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .preview-btn { background: #007bff; color: white; }
+        .edit-btn, .download-btn { display: none; }
+        .edit-btn { background: #ffc107; }
+        .download-btn { background: #28a745; color: white; }
+
+        /* Resume Layout */
+        #resume-container {
+            width: 210mm; min-height: 297mm; background: white; margin: 20px auto;
+            display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .resume-body { display: flex; flex: 1; }
+
+        /* Sidebar (Left) */
+        .sidebar { width: 38%; background: var(--sidebar-color); color: white; padding: 30px; }
+        
+        .photo-box {
+            width: 100%; height: 260px; border: 1px solid rgba(255,255,255,0.5);
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.1); cursor: pointer; margin-bottom: 30px; overflow: hidden;
+        }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Main Content (Right) */
+        .main-content { width: 62%; background: var(--main-bg); display: flex; flex-direction: column; }
+
+        .header-block { background: var(--header-bg); padding: 50px 40px; }
+        .header-block h1 { margin: 0; font-size: 55px; color: #444; text-transform: none; }
+        .header-block h3 { margin: 5px 0 0; font-size: 20px; color: #777; letter-spacing: 2px; }
+
+        .content-padding { padding: 40px; }
+
+        /* Section Styling */
+        .section-title {
+            font-size: 18px; font-weight: bold; letter-spacing: 2px;
+            margin-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 5px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .sidebar .section-title { border-bottom-color: rgba(255,255,255,0.3); margin-top: 30px; }
+
+        .add-btn {
+            background: #fff; border: 1px solid #ccc; width: 22px; height: 22px;
+            border-radius: 50%; cursor: pointer; font-size: 16px; 
+            display: flex; align-items: center; justify-content: center; color: #333;
+        }
+
+        /* Editable Areas */
+        [contenteditable="true"] { outline: none; border: 1px solid transparent; }
+        [contenteditable="true"]:hover { border-bottom: 1px dashed #aaa; }
+        
+        .item-block { margin-bottom: 20px; }
+        .subheading { font-weight: bold; display: block; font-size: 1.1em; color: #444; }
+        .meta-info { font-style: italic; color: #666; font-size: 0.9em; margin-bottom: 5px; }
+        
+        .bullet-point { margin-left: 15px; position: relative; }
+        .bullet-point::before { content: "•"; position: absolute; left: -15px; }
+
+        /* Footer */
+        .resume-footer {
+            height: 60px; background: var(--header-bg); display: flex;
+            justify-content: space-around; align-items: center; font-size: 13px; color: #555;
+        }
+
+        /* Preview Mode adjustments */
+        .preview-mode .add-btn, .preview-mode .toolbar-controls { display: none !important; }
+        .preview-mode .edit-btn, .preview-mode .download-btn { display: inline-block; }
+        .preview-mode .preview-btn { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <div class="toolbar-controls">
+        <label style="color:white">Change Color: </label>
+        <input type="color" id="colorPicker" value="#8b9485">
+    </div>
+    <button class="btn preview-btn" onclick="toggleMode('preview')">Preview</button>
+    <button class="btn edit-btn" onclick="toggleMode('edit')">Edit</button>
+    <button class="btn download-btn" onclick="generatePDF()">Download PDF</button>
+</div>
+
+<div id="resume-container">
+    <div class="resume-body">
+        <div class="sidebar" id="sidebar">
+            <div class="photo-box" onclick="document.getElementById('fileInput').click()">
+                <span id="photoText">CLICK TO UPLOAD PHOTO</span>
+                <img id="displayImg" style="display:none">
+            </div>
+            <input type="file" id="fileInput" style="display:none" accept="image/*">
+
+            <div class="section-title">PROFILE</div>
+            <div contenteditable="true" style="font-size: 14px; line-height: 1.4;">
+                Enter your profile description here...
+            </div>
+
+            <div class="section-title">SKILLS <button class="add-btn" onclick="addBullet('skills-box')">+</button></div>
+            <div id="skills-box"></div>
+
+            <div class="section-title">AWARDS <button class="add-btn" onclick="addBullet('awards-box')">+</button></div>
+            <div id="awards-box"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="header-block">
+                <h1 contenteditable="true">NAME HERE</h1>
+                <h3 contenteditable="true">PROFESSIONAL TITLE</h3>
+            </div>
+
+            <div class="content-padding">
+                <div class="section-title" style="color: #666;">WORK EXPERIENCE <button class="add-btn" onclick="addBlock('work-box')">+</button></div>
+                <div id="work-box"></div>
+
+                <div class="section-title" style="color: #666; margin-top: 40px;">EDUCATIONAL HISTORY <button class="add-btn" onclick="addBlock('edu-box')">+</button></div>
+                <div id="edu-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="resume-footer">
+        <div contenteditable="true">📞 +123-456-7890</div>
+        <div contenteditable="true">✉️ hello@reallygreatsite.com</div>
+        <div contenteditable="true">🌐 reallygreatsite.com</div>
+    </div>
+</div>
+
+<script>
+    // Color Picker
+    document.getElementById('colorPicker').addEventListener('input', (e) => {
+        document.documentElement.style.setProperty('--sidebar-color', e.target.value);
+    });
+
+    // Photo Upload
+    document.getElementById('fileInput').addEventListener('change', function() {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const img = document.getElementById('displayImg');
+            img.src = reader.result;
+            img.style.display = 'block';
+            document.getElementById('photoText').style.display = 'none';
+        }
+        reader.readAsDataURL(this.files[0]);
+    });
+
+    // Add list items (Skills/Awards)
+    function addBullet(containerId) {
+        const div = document.createElement('div');
+        div.className = 'bullet-point';
+        div.contentEditable = true;
+        div.innerText = 'New point';
+        document.getElementById(containerId).appendChild(div);
+    }
+
+    // Add block items (Work/Education)
+    function addBlock(containerId) {
+        const div = document.createElement('div');
+        div.className = 'item-block';
+        div.innerHTML = `
+            <span class="subheading" contenteditable="true">Title / Degree</span>
+            <div class="meta-info" contenteditable="true">Company / School | Dates</div>
+            <div class="bullet-point" contenteditable="true">Task or achievement description...</div>
+            <button class="add-btn toolbar-controls" onclick="this.parentElement.appendChild(createBullet())" style="margin-top:5px; width:18px; height:18px; font-size:12px">+</button>
+        `;
+        document.getElementById(containerId).appendChild(div);
+    }
+
+    function createBullet() {
+        const b = document.createElement('div');
+        b.className = 'bullet-point';
+        b.contentEditable = true;
+        b.innerText = 'New point';
+        return b;
+    }
+
+    // Toggle Preview/Edit
+    function toggleMode(mode) {
+        if(mode === 'preview') {
+            document.body.classList.add('preview-mode');
+        } else {
+            document.body.classList.remove('preview-mode');
+        }
+    }
+
+    // PDF Download
+    function generatePDF() {
+        const element = document.getElementById('resume-container');
+        html2pdf().from(element).set({
+            margin: 0,
+            filename: 'Resume.pdf',
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).save();
+    }
+
+    // Initial setup
+    window.onload = () => {
+        addBullet('skills-box');
+        addBullet('awards-box');
+        addBlock('work-box');
+        addBlock('edu-box');
+    };
+</script>
+
+</body>
+</html>

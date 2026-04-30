@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Theme Resume Builder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --accent-color: #ffffff;
+            --bg-black: #000000;
+            --text-white: #ffffff;
+            --gray-text: #cccccc;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Poppins:wght@300;400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 40px 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- UI Toolbar --- */
+        #toolbar {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); padding: 12px 25px; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 20px; z-index: 1000;
+        }
+        .color-picker { display: flex; gap: 10px; border-right: 1px solid #ddd; padding-right: 15px; }
+        .color-btn { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+        .color-btn.active { border-color: #000; transform: scale(1.1); }
+
+        .btn { padding: 8px 20px; border-radius: 20px; border: none; cursor: pointer; font-weight: 600; font-family: inherit; transition: 0.3s; }
+        .btn-preview { background: #000; color: white; }
+        .btn-edit { background: #eee; display: none; }
+        .btn-dl { background: #00a8ff; color: white; display: none; }
+
+        /* --- Resume Canvas --- */
+        #resume-canvas {
+            width: 210mm;
+            min-height: 297mm;
+            background: var(--bg-black);
+            color: var(--text-white);
+            display: grid;
+            grid-template-columns: 210px 1fr;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            position: relative;
+            border: 10px solid var(--bg-black);
+        }
+
+        /* Left Column */
+        .left-col {
+            border-right: 1px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .photo-section {
+            width: 100%;
+            height: 320px;
+            background: #222;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--accent-color);
+        }
+        .photo-section img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .photo-section.has-img span { display: none; }
+        .photo-section.has-img img { display: block; }
+        .photo-section span { font-size: 12px; color: #888; text-transform: uppercase; }
+
+        .left-padding { padding: 20px 15px; }
+        .left-heading { font-family: 'Montserrat'; font-weight: 700; font-size: 14px; text-transform: uppercase; margin: 25px 0 15px; letter-spacing: 1px; color: var(--text-white); }
+
+        /* Right Column */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-box {
+            padding: 30px 40px;
+            border-bottom: 1px solid var(--accent-color);
+        }
+        .name-input { font-family: 'Montserrat'; font-weight: 700; font-size: 38px; line-height: 1; text-transform: uppercase; margin-bottom: 5px; }
+        .title-input { font-size: 16px; color: var(--gray-text); text-transform: uppercase; letter-spacing: 2px; }
+
+        .contact-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 20px 40px;
+            gap: 15px;
+            border-bottom: 1px solid var(--accent-color);
+        }
+        .contact-item { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--gray-text); }
+        .contact-item i { color: var(--text-white); font-size: 14px; width: 15px; }
+
+        .main-padding { padding: 30px 40px; }
+        .section-block { margin-bottom: 35px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        .section-block:last-child { border: none; }
+
+        .right-heading { font-family: 'Montserrat'; font-weight: 700; font-size: 18px; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
+
+        .entry-item { margin-bottom: 15px; position: relative; }
+        .entry-main { font-weight: 700; font-size: 14px; margin-bottom: 2px; text-transform: uppercase; }
+        .entry-sub { font-size: 13px; color: var(--gray-text); margin-bottom: 8px; }
+
+        .bullet-list { list-style: none; padding: 0; margin: 0; }
+        .bullet-item { position: relative; padding-left: 15px; font-size: 13px; color: var(--gray-text); line-height: 1.6; margin-bottom: 5px; }
+        .bullet-item::before { content: "•"; position: absolute; left: 0; color: var(--text-white); }
+
+        /* Languages */
+        .lang-item { margin-bottom: 12px; }
+        .lang-info { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+        .bar-wrap { height: 8px; background: #333; border-radius: 0; position: relative; }
+        .bar-fill { height: 100%; background: var(--accent-color); width: 70%; transition: 0.3s; }
+        .lang-slider { width: 100%; margin-top: 5px; cursor: pointer; }
+
+        /* Controls */
+        .add-btn {
+            background: none; border: 1px dashed var(--accent-color); color: var(--accent-color);
+            width: 20px; height: 20px; border-radius: 4px; cursor: pointer;
+            font-size: 12px; display: inline-flex; align-items: center; justify-content: center;
+            opacity: 0.4; transition: 0.2s;
+        }
+        .add-btn:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+
+        [contenteditable="true"]:focus { background: rgba(255,255,255,0.05); outline: none; }
+
+        /* Preview Mode */
+        body.preview .add-btn, 
+        body.preview .lang-slider, 
+        body.preview #toolbar .btn-preview,
+        body.preview .color-picker { display: none !important; }
+        body.preview .btn-edit, body.preview .btn-dl { display: block; }
+        body.preview [contenteditable="true"] { pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="toolbar">
+    <div class="color-picker">
+        <div class="color-btn active" style="background: #ffffff;" onclick="changeTheme('#ffffff', this)"></div>
+        <div class="color-btn" style="background: #00d2d3;" onclick="changeTheme('#00d2d3', this)"></div>
+        <div class="color-btn" style="background: #ff9f43;" onclick="changeTheme('#ff9f43', this)"></div>
+        <div class="color-btn" style="background: #ee5253;" onclick="changeTheme('#ee5253', this)"></div>
+        <div class="color-btn" style="background: #1dd1a1;" onclick="changeTheme('#1dd1a1', this)"></div>
+    </div>
+    <button class="btn btn-preview" onclick="togglePreview(true)">Preview</button>
+    <button class="btn btn-edit" onclick="togglePreview(false)">Back to Edit</button>
+    <button class="btn btn-dl" onclick="downloadPDF()">Download PDF</button>
+</div>
+
+<div id="resume-canvas">
+    <aside class="left-col">
+        <div class="photo-section" id="photoBox" onclick="document.getElementById('fileInput').click()">
+            <span>Click to Upload Photo</span>
+            <img id="displayImg">
+            <input type="file" id="fileInput" hidden accept="image/*" onchange="uploadImg(this)">
+        </div>
+
+        <div class="left-padding">
+            <div class="left-heading">Skills</div>
+            <div id="skills-list">
+                <div class="bullet-item" contenteditable="true">Strategic Marketing</div>
+                <div class="bullet-item" contenteditable="true">Campaign Planning</div>
+            </div>
+            <button class="add-btn" onclick="addBulletItem('skills-list')">+</button>
+
+            <div class="left-heading">Languages</div>
+            <div id="languages-list"></div>
+            <button class="add-btn" onclick="addNewLanguage()">+</button>
+        </div>
+    </aside>
+
+    <main class="right-col">
+        <div class="header-box">
+            <div class="name-input" contenteditable="true">MURAD NASER</div>
+            <div class="title-input" contenteditable="true">Marketing Expert</div>
+        </div>
+
+        <div class="contact-bar">
+            <div class="contact-item"><i class="fas fa-phone"></i> <span contenteditable="true">+123-456-7890</span></div>
+            <div class="contact-item"><i class="fas fa-globe"></i> <span contenteditable="true">www.reallygreatsite.com</span></div>
+            <div class="contact-item"><i class="fas fa-envelope"></i> <span contenteditable="true">hello@reallygreatsite.com</span></div>
+            <div class="contact-item"><i class="fas fa-map-marker-alt"></i> <span contenteditable="true">123 Anywhere St., Any City</span></div>
+        </div>
+
+        <div class="main-padding">
+            <div class="section-block">
+                <div class="right-heading">Profile</div>
+                <div contenteditable="true" style="font-size: 13px; color: var(--gray-text); line-height: 1.6;">
+                    Marketing Expert with over 8 years of experience in digital marketing strategy development... (Click to Edit)
+                </div>
+            </div>
+
+            <div class="section-block">
+                <div class="right-heading">Education <button class="add-btn" onclick="addExperience('edu-container')">+</button></div>
+                <div id="edu-container"></div>
+            </div>
+
+            <div class="section-block">
+                <div class="right-heading">Work Experience <button class="add-btn" onclick="addExperience('work-container')">+</button></div>
+                <div id="work-container"></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // --- Theme Control ---
+    function changeTheme(color, btn) {
+        document.documentElement.style.setProperty('--accent-color', color);
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    // --- Photo Upload ---
+    function uploadImg(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('displayImg').src = e.target.result;
+                document.getElementById('photoBox').classList.add('has-img');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- Content Builders ---
+    function addBulletItem(containerId) {
+        const div = document.createElement('div');
+        div.className = 'bullet-item';
+        div.contentEditable = true;
+        div.innerText = "New point...";
+        document.getElementById(containerId).appendChild(div);
+        div.focus();
+    }
+
+    function addNewLanguage() {
+        const container = document.getElementById('languages-list');
+        const div = document.createElement('div');
+        div.className = 'lang-item';
+        div.innerHTML = `
+            <div class="lang-info"><span contenteditable="true">New Language</span><span class="pct">70%</span></div>
+            <div class="bar-wrap"><div class="bar-fill" style="width: 70%;"></div></div>
+            <input type="range" class="lang-slider" min="0" max="100" value="70" oninput="updateLang(this)">
+        `;
+        container.appendChild(div);
+    }
+
+    function updateLang(slider) {
+        const row = slider.closest('.lang-item');
+        row.querySelector('.pct').innerText = slider.value + '%';
+        row.querySelector('.bar-fill').style.width = slider.value + '%';
+    }
+
+    function addExperience(containerId) {
+        const container = document.getElementById(containerId);
+        const div = document.createElement('div');
+        div.className = 'entry-item';
+        div.innerHTML = `
+            <div class="entry-main" contenteditable="true">Title / Position</div>
+            <div class="entry-sub" contenteditable="true">Company or Institution Name | 20XX-20XX</div>
+            <div class="bullets-box">
+                <div class="bullet-item" contenteditable="true">Description of achievements...</div>
+            </div>
+            <button class="add-btn" onclick="addInnerBullet(this)">+</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addInnerBullet(btn) {
+        const box = btn.previousElementSibling;
+        const li = document.createElement('div');
+        li.className = 'bullet-item';
+        li.contentEditable = true;
+        li.innerText = "New detail...";
+        box.appendChild(li);
+        li.focus();
+    }
+
+    // --- Mode Actions ---
+    function togglePreview(status) {
+        document.body.classList.toggle('preview', status);
+        window.scrollTo(0,0);
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('resume-canvas');
+        const opt = {
+            margin: 0,
+            filename: 'Murad_Style_Resume.pdf',
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, useCORS: true, backgroundColor: '#000000' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // Initialize starters
+    addExperience('edu-container');
+    addExperience('work-container');
+    addNewLanguage();
+</script>
+
+</body>
+</html>
