@@ -1,826 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olivia Wilson - Designer CV Builder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Italianno&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        /* --- General Page Styles --- */
-        body {
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            color: #333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Italianno&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+    /* --- CSS Refactored & Minified --- */
+    body { font-family: 'Montserrat', sans-serif; background: #f4f4f9; margin: 0; padding: 20px; color: #333; }
+    .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h1, h2, h3 { color: #222; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    .section { border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    label { display: block; margin: 10px 0 5px; font-size: 0.9em; font-weight: bold; }
+    input, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    .btn-add { background: #ddd; color: #000; padding: 5px 10px; float: right; }
+    .btn-primary { background: #f4dcd3; color: #000; font-size: 1.1em; width: 100%; }
+    .btn-secondary { background: #444; color: #fff; }
+    .error { border-color: red !important; }
+    .alert { color: red; display: none; text-align: center; margin-bottom: 10px; font-weight: bold; }
+    
+    /* Dynamic Fields */
+    .item-group { border-left: 3px solid #f4dcd3; padding-left: 10px; margin-bottom: 10px; position: relative; }
+    .btn-remove { position: absolute; top: 0; right: 0; background: red; color: white; padding: 2px 6px; font-size: 12px; }
 
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 2rem auto;
-            background-color: #fff;
-            padding: 2rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
+    /* --- Preview CSS --- */
+    #preview-section { display: none; }
+    .preview-wrapper { overflow: auto; background: #555; padding: 20px; display: flex; justify-content: center; }
+    
+    /* A4 Dimensions for PDF */
+    #resume { width: 210mm; min-height: 297mm; background: #fff; display: grid; grid-template-columns: 35% 65%; box-shadow: 0 0 10px rgba(0,0,0,0.5); transform-origin: top center; }
+    
+    /* Left Column (Pink) */
+    .left-col { background: #f4dcd3; padding: 40px 30px; word-break: break-word; }
+    .photo-box { width: 160px; height: 160px; background: #fff; padding: 10px; margin: 0 auto 30px; }
+    .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+    .left-col h3 { border-bottom: 2px solid #fff; padding-bottom: 5px; font-size: 14px; letter-spacing: 2px; margin-top: 30px; text-transform: uppercase; }
+    .left-col p, .left-col ul, .left-col li { font-size: 12px; line-height: 1.6; padding: 0; margin: 0 0 10px 0; }
+    .left-col ul { padding-left: 15px; }
 
-        h1.page-title {
-            text-align: center;
-            color: #444;
-            margin-bottom: 2rem;
-        }
-
-        button {
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 500;
-        }
-
-        button.primary-btn {
-            background-color: #f4dcd3; /* Pink background from image */
-            color: #333;
-            padding: 0.75rem 2rem;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
-        }
-
-        button.primary-btn:hover {
-            background-color: #e0b8a8;
-        }
-
-        button.secondary-btn {
-            background-color: #fff;
-            color: #333;
-            border: 1px solid #ccc;
-            padding: 0.75rem 2rem;
-            font-size: 1rem;
-            margin-right: 1rem;
-        }
-
-        /* --- Form Styles --- */
-        #cv-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .form-column {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .form-section {
-            border: 1px solid #ddd;
-            padding: 1.5rem;
-            border-radius: 8px;
-            background-color: #fafafa;
-        }
-
-        .form-section h3 {
-            margin-top: 0;
-            border-bottom: 2px solid #f4dcd3;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .add-btn {
-            background-color: #eee;
-            border: 1px solid #ccc;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 0;
-            color: #333;
-        }
-        
-        .add-btn:hover {
-            background-color: #ddd;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="tel"],
-        textarea,
-        input[type="file"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .dynamic-field-group {
-            margin-bottom: 1rem;
-            padding: 1rem;
-            border: 1px dashed #bbb;
-            border-radius: 4px;
-            position: relative;
-        }
-        
-        .dynamic-field-group h4 { margin-top: 0; margin-bottom: 1rem;}
-
-        .remove-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: #ffcccc;
-            color: #aa0000;
-            border: none;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        /* Validation Alert Styles */
-        .alert-container {
-            display: none;
-            background-color: #ffe0e0;
-            color: #aa0000;
-            border: 1px solid #aa0000;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 4px;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        .input-error {
-            border-color: #aa0000 !important;
-            box-shadow: 0 0 5px rgba(170, 0, 0, 0.3);
-        }
-
-        .label-error {
-            color: #aa0000 !important;
-        }
-
-        /* Form Footer */
-        .form-footer {
-            margin-top: 2rem;
-            text-align: center;
-            grid-column: 1 / -1;
-        }
-
-        /* --- Preview Styles --- */
-        #preview-section {
-            display: none; /* Hidden by default */
-        }
-
-        #resume-preview-root {
-            width: 210mm; /* A4 width */
-            height: 297mm; /* A4 height */
-            background-color: #fff;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            display: grid;
-            grid-template-columns: 35% 65%; /* Replicating left pink, right white */
-            color: #333;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        /* Replicating the pink column */
-        #p-left-col {
-            background-color: #f4dcd3;
-            padding: 40px 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 20px;
-        }
-
-        /* Profile image with frame */
-        #p-photo-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-        
-        #p-photo-wrapper {
-            position: relative;
-            width: 180px;
-            height: 180px;
-        }
-        
-        #p-photo-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 100%;
-            height: 100%;
-            border: 3px solid #f4dcd3; /* Frame color matches bg */
-            z-index: 0;
-        }
-        
-        #p-photo-img {
-            width: 180px;
-            height: 180px;
-            border: 20px solid #fff; /* White part of frame */
-            object-fit: cover;
-            position: relative;
-            z-index: 1;
-            box-sizing: border-box;
-        }
-
-        /* Standard headings in pink column */
-        #p-left-col h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            width: 100%;
-            border-bottom: 2px solid #fff;
-            padding-bottom: 5px;
-        }
-        
-        #p-left-col p, #p-left-col ul {
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin: 0;
-            width: 100%;
-        }
-        
-        #p-left-col ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        #p-left-col ul li {
-            margin-bottom: 8px;
-        }
-
-        /* Contact details icons and text */
-        .p-contact-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            width: 100%;
-            font-size: 0.9rem;
-        }
-
-        .p-contact-item svg {
-            width: 18px;
-            height: 18px;
-            margin-right: 15px;
-            fill: #333;
-        }
-
-        /* Replicating the white column */
-        #p-right-col {
-            background-color: #fff;
-            padding: 60px 50px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        /* Name header in script and sans-serif */
-        #p-name-container {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-        }
-        
-        #p-first-name {
-            font-family: 'Italianno', cursive;
-            font-size: 5rem;
-            color: #333;
-            margin: 0;
-            line-height: 0.8;
-            margin-left: -10px; /* pull script slightly left for style */
-        }
-        
-        #p-last-name {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 1.6rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            color: #333;
-            margin: 0;
-            margin-top: 5px;
-            padding-left: 20px; /* aligned relative to script */
-        }
-        
-        #p-title {
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #333;
-            margin-top: 30px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #ddd;
-        }
-
-        /* Content block headings in white column */
-        .p-content-section h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 0;
-            margin-bottom: 20px;
-            background-color: #f4dcd3;
-            display: inline-block;
-            padding: 8px 30px;
-        }
-
-        /* Experience and Education entries */
-        .p-entry {
-            margin-bottom: 25px;
-        }
-        
-        .p-entry-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 5px;
-        }
-        
-        .p-entry-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin: 0;
-        }
-        
-        .p-entry-dates {
-            font-size: 0.9rem;
-            color: #666;
-            margin: 0;
-        }
-        
-        .p-entry-subtitle {
-            font-size: 1rem;
-            font-style: italic;
-            margin: 0;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .p-entry-description {
-            font-size: 0.95rem;
-            line-height: 1.7;
-            color: #333;
-            margin: 0;
-        }
-
-        /* Preview Footer Buttons */
-        #preview-controls {
-            margin-top: 2rem;
-            text-align: center;
-        }
-        
-        /* A4 aspect ratio preview for screen */
-        #preview-wrapper {
-            display: flex;
-            justify-content: center;
-            overflow-x: auto;
-            padding: 1rem;
-        }
-
-    </style>
+    /* Right Column (White) */
+    .right-col { padding: 50px; }
+    .name-script { font-family: 'Italianno', cursive; font-size: 70px; margin: 0 0 -20px 0; font-weight: normal; }
+    .name-sans { font-size: 30px; letter-spacing: 3px; text-transform: uppercase; margin: 0; }
+    .job-title { font-size: 14px; letter-spacing: 2px; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-top: 10px; text-transform: uppercase; }
+    
+    .right-col h3 { background: #f4dcd3; display: inline-block; padding: 5px 15px; font-size: 14px; letter-spacing: 2px; margin-top: 30px; text-transform: uppercase; }
+    .entry { margin-bottom: 20px; }
+    .entry-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+    .entry-sub { font-style: italic; font-size: 13px; margin: 5px 0; }
+    .entry-desc { font-size: 12px; line-height: 1.6; color: #444; }
+</style>
 </head>
 <body>
 
 <div class="container">
-    <h1 class="page-title">Build Your Designer CV</h1>
-    
-    <div class="alert-container" id="validation-alert">
-        Please fill in all required details. Missing fields are highlighted.
+    <h1 id="main-title" style="text-align:center;">Designer CV Builder</h1>
+    <div id="alert" class="alert">Please fill in all highlighted fields!</div>
+
+    <div id="form-section">
+        <form id="cv-form" class="grid">
+            <div>
+                <div class="section">
+                    <label>Profile Photo (Square)</label>
+                    <input type="file" id="f-photo" accept="image/*">
+                </div>
+                <div class="section">
+                    <label>About Me</label>
+                    <textarea id="f-about" rows="4" required>Passionate designer with a focus on architecture...</textarea>
+                </div>
+                <div class="section">
+                    <h3>Contact</h3>
+                    <label>Phone</label><input type="text" id="f-phone" required value="+123-456-7890">
+                    <label>Email</label><input type="text" id="f-email" required value="hello@website.com">
+                    <label>Website</label><input type="text" id="f-web" required value="www.website.com">
+                    <label>Location</label><input type="text" id="f-loc" required value="Any City, ST 12345">
+                </div>
+                <div class="section">
+                    <h3>Skills <button type="button" class="btn-add" onclick="addItem('skills')">+</button></h3>
+                    <div id="skills-list"></div>
+                </div>
+                <div class="section">
+                    <h3>Languages <button type="button" class="btn-add" onclick="addItem('langs')">+</button></h3>
+                    <div id="langs-list"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section">
+                    <h3>Profile</h3>
+                    <label>First Name</label><input type="text" id="f-fname" required value="Olivia">
+                    <label>Last Name</label><input type="text" id="f-lname" required value="Wilson">
+                    <label>Title</label><input type="text" id="f-title" required value="Designer and Architect">
+                </div>
+                <div class="section">
+                    <h3>Experience <button type="button" class="btn-add" onclick="addExpEdu('exp')">+</button></h3>
+                    <div id="exp-list"></div>
+                </div>
+                <div class="section">
+                    <h3>Education <button type="button" class="btn-add" onclick="addExpEdu('edu')">+</button></h3>
+                    <div id="edu-list"></div>
+                </div>
+            </div>
+        </form>
+        <button class="btn-primary" onclick="generateCV()">Preview & Download Resume</button>
     </div>
 
-    <form id="cv-form">
-        <div class="form-column">
-            <div class="form-section">
-                <h3>Profile Photo</h3>
-                <label for="photo-upload">Upload Photo (Square recommended)</label>
-                <input type="file" id="photo-upload" accept="image/*" required>
-            </div>
-
-            <div class="form-section">
-                <h3>About Me</h3>
-                <label for="about-text">Write a short bio</label>
-                <textarea id="about-text" required placeholder="Lorem ipsum dolor sit amet..."></textarea>
-            </div>
-
-            <div class="form-section">
-                <h3>Contact Details</h3>
-                <label for="contact-phone">Mobile No.</label>
-                <input type="tel" id="contact-phone" required placeholder="+123-456-7890">
-                
-                <label for="contact-email">Email</label>
-                <input type="email" id="contact-email" required placeholder="hello@reallygreatsite.com">
-
-                <label for="contact-website">Website</label>
-                <input type="text" id="contact-website" required placeholder="www.reallygreatsite.com">
-
-                <label for="contact-location">Location</label>
-                <input type="text" id="contact-location" required placeholder="123 Anywhere St, Any City, ST 12345">
-            </div>
-
-            <div class="form-section" id="skills-section">
-                <h3>Skills <button type="button" class="add-btn" onclick="addDynamicField('skills')">+</button></h3>
-                <div id="skills-fields-container">
-                    <input type="text" name="skill-0" required placeholder="Editing Software" class="skill-input">
-                </div>
-            </div>
-
-            <div class="form-section" id="languages-section">
-                <h3>Languages <button type="button" class="add-btn" onclick="addDynamicField('languages')">+</button></h3>
-                <div id="languages-fields-container">
-                    <input type="text" name="language-0" required placeholder="Spanish" class="language-input">
-                </div>
-            </div>
-        </div>
-
-        <div class="form-column">
-            <div class="form-section">
-                <h3>Basic Information</h3>
-                <label for="first-name">First Name (e.g., Olivia)</label>
-                <input type="text" id="first-name" required placeholder="Olivia">
-                <label for="last-name">Last Name (e.g., Wilson)</label>
-                <input type="text" id="last-name" required placeholder="Wilson">
-                <label for="prof-title">Professional Title</label>
-                <input type="text" id="prof-title" required placeholder="DESIGNER AND ARCHITECT">
-            </div>
-
-            <div class="form-section" id="experience-section">
-                <h3>Work Experience <button type="button" class="add-btn" onclick="addDynamicField('experience')">+</button></h3>
-                <div id="experience-fields-container">
-                    </div>
-            </div>
-
-            <div class="form-section" id="education-section">
-                <h3>Education <button type="button" class="add-btn" onclick="addDynamicField('education')">+</button></h3>
-                <div id="education-fields-container">
-                    </div>
-            </div>
-        </div>
-
-        <div class="form-footer">
-            <button type="button" class="primary-btn" onclick="showPreview()">Preview</button>
-        </div>
-    </form>
-
     <div id="preview-section">
-        <h2 style="text-align: center; margin-bottom: 1.5rem;">Resume Preview</h2>
-        <div id="preview-wrapper">
-            <div id="resume-preview-root">
-                <div id="p-left-col">
-                    <div id="p-photo-container">
-                        <div id="p-photo-wrapper">
-                            <img src="" id="p-photo-img" alt="Profile Picture">
-                        </div>
-                    </div>
-                    
-                    <h2>ABOUT ME</h2>
-                    <p id="p-about-text"></p>
-                    
-                    <h2>CONTACT</h2>
-                    <div class="p-contact-items">
-                        <div class="p-contact-item">
-                            <svg viewBox="0 0 24 24"><path d="M17 2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 18H9v-2h6v2zm3-4H6V4h12v12z"/></svg>
-                            <span id="p-contact-phone"></span>
-                        </div>
-                        <div class="p-contact-item">
-                            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                            <span id="p-contact-email"></span>
-                        </div>
-                        <div class="p-contact-item">
-                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                            <span id="p-contact-website"></span>
-                        </div>
-                        <div class="p-contact-item">
-                            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                            <span id="p-contact-location"></span>
-                        </div>
-                    </div>
-                    
-                    <h2>SKILLS</h2>
-                    <ul id="p-skills-list"></ul>
-                    
-                    <h2>LANGUAGES</h2>
-                    <ul id="p-languages-list"></ul>
-                </div>
-
-                <div id="p-right-col">
-                    <div id="p-name-container">
-                        <span id="p-first-name"></span>
-                        <span id="p-last-name"></span>
-                        <div id="p-title"></div>
-                    </div>
-                    
-                    <div class="p-content-section">
-                        <h2>WORK EXPERIENCE</h2>
-                        <div id="p-experience-container"></div>
-                    </div>
-                    
-                    <div class="p-content-section">
-                        <h2>EDUCATION</h2>
-                        <div id="p-education-container"></div>
-                    </div>
-                </div>
-            </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button class="btn-secondary" onclick="editCV()">← Back to Edit</button>
+            <button class="btn-primary" style="width:auto; margin-left:10px;" onclick="downloadPDF()">Download PDF</button>
         </div>
 
-        <div id="preview-controls">
-            <button type="button" class="secondary-btn" onclick="editForm()">Edit</button>
-            <button type="button" class="primary-btn" onclick="downloadResume()">Download as PDF</button>
+        <div class="preview-wrapper">
+            <div id="resume">
+                <div class="left-col">
+                    <div class="photo-box"><img id="r-photo" src="" alt=""></div>
+                    <h3>About Me</h3><p id="r-about"></p>
+                    <h3>Contact</h3>
+                    <p id="r-contact"></p>
+                    <h3>Skills</h3><ul id="r-skills"></ul>
+                    <h3>Languages</h3><ul id="r-langs"></ul>
+                </div>
+                <div class="right-col">
+                    <h1 class="name-script" id="r-fname"></h1>
+                    <h2 class="name-sans" id="r-lname"></h2>
+                    <div class="job-title" id="r-title"></div>
+                    
+                    <h3>Work Experience</h3>
+                    <div id="r-exp"></div>
+                    
+                    <h3>Education</h3>
+                    <div id="r-edu"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
 <script>
-    // counters for dynamic fields to generate unique names/IDs
-    let skillCount = 1;
-    let languageCount = 1;
-    let expCount = 0;
-    let eduCount = 0;
+// -- DYNAMIC FORM BUILDER LOGIC --
+function addItem(type) {
+    const div = document.createElement('div');
+    div.className = 'item-group';
+    div.innerHTML = `<input type="text" required placeholder="Entry..."> <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>`;
+    document.getElementById(type + '-list').appendChild(div);
+}
 
-    // Helper to add a removal button to dynamic fields
-    function addRemovalButton(fieldGroup) {
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-btn';
-        removeBtn.innerText = '×';
-        removeBtn.onclick = function() { fieldGroup.remove(); };
-        fieldGroup.appendChild(removeBtn);
+function addExpEdu(type) {
+    const div = document.createElement('div');
+    div.className = 'item-group';
+    const isExp = type === 'exp';
+    div.innerHTML = `
+        <label>${isExp ? 'Job Title' : 'Degree'}</label><input type="text" class="t1" required>
+        <label>${isExp ? 'Company' : 'Institution'}</label><input type="text" class="t2" required>
+        <label>Dates</label><input type="text" class="t3" required>
+        ${isExp ? `<label>Description</label><textarea class="t4" rows="2"></textarea>` : ''}
+        <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+    `;
+    document.getElementById(type + '-list').appendChild(div);
+}
+
+// Pre-fill one of each on load
+window.onload = () => { addItem('skills'); addItem('langs'); addExpEdu('exp'); addExpEdu('edu'); };
+
+// -- GENERATE PREVIEW LOGIC --
+function generateCV() {
+    let isValid = true;
+    document.querySelectorAll('input[required], textarea[required]').forEach(el => {
+        el.classList.remove('error');
+        if (!el.value.trim()) { el.classList.add('error'); isValid = false; }
+    });
+
+    if (!isValid) { document.getElementById('alert').style.display = 'block'; return; }
+    document.getElementById('alert').style.display = 'none';
+
+    // Image Setup
+    const file = document.getElementById('f-photo').files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => document.getElementById('r-photo').src = e.target.result;
+        reader.readAsDataURL(file);
+    } else {
+        // Transparent pixel to prevent PDF CORS error
+        document.getElementById('r-photo').src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; 
     }
 
-    // Function to add new fields dynamically based on '+' button click
-    function addDynamicField(type) {
-        let container, fieldGroup;
+    // Text Setup
+    document.getElementById('r-about').innerText = document.getElementById('f-about').value;
+    document.getElementById('r-contact').innerHTML = `
+        ☎ ${document.getElementById('f-phone').value}<br>
+        ✉ ${document.getElementById('f-email').value}<br>
+        🌐 ${document.getElementById('f-web').value}<br>
+        📍 ${document.getElementById('f-loc').value}
+    `;
+    document.getElementById('r-fname').innerText = document.getElementById('f-fname').value;
+    document.getElementById('r-lname').innerText = document.getElementById('f-lname').value;
+    document.getElementById('r-title').innerText = document.getElementById('f-title').value;
 
-        switch(type) {
-            case 'skills':
-                container = document.getElementById('skills-fields-container');
-                fieldGroup = document.createElement('div');
-                fieldGroup.className = 'dynamic-field-group';
-                fieldGroup.innerHTML = `<input type="text" name="skill-${skillCount}" required placeholder="Photo Editing" class="skill-input">`;
-                addRemovalButton(fieldGroup);
-                container.appendChild(fieldGroup);
-                skillCount++;
-                break;
-            case 'languages':
-                container = document.getElementById('languages-fields-container');
-                fieldGroup = document.createElement('div');
-                fieldGroup.className = 'dynamic-field-group';
-                fieldGroup.innerHTML = `<input type="text" name="language-${languageCount}" required placeholder="English" class="language-input">`;
-                addRemovalButton(fieldGroup);
-                container.appendChild(fieldGroup);
-                languageCount++;
-                break;
-            case 'experience':
-                container = document.getElementById('experience-fields-containe);
+    // Lists Setup
+    const getList = (id) => Array.from(document.getElementById(id).querySelectorAll('input')).map(i => i.value);
+    document.getElementById('r-skills').innerHTML = getList('skills-list').map(v => `<li>${v}</li>`).join('');
+    document.getElementById('r-langs').innerHTML = getList('langs-list').map(v => `<li>${v}</li>`).join('');
 
-                                   fieldGroup = document.createElement('div');
-                fieldGroup.className = 'dynamic-field-group experience-entry';
-                fieldGroup.innerHTML = `
-                    <h4>Job Entry ${expCount + 1}</h4>
-                    <label>Job Title</label>
-                    <input type="text" name="exp-title-${expCount}" required placeholder="DESIGNER AND TEAM LEADER" class="exp-title">
-                    <label>Company</label>
-                    <input type="text" name="exp-company-${expCount}" required placeholder="Wardiere Inc." class="exp-company">
-                    <label>Dates</label>
-                    <input type="text" name="exp-dates-${expCount}" required placeholder="2020 - 2025" class="exp-dates">
-                    <label>Description</label>
-                    <textarea name="exp-desc-${expCount}" required placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit..." class="exp-desc"></textarea>
-                `;
-                addRemovalButton(fieldGroup);
-                container.appendChild(fieldGroup);
-                expCount++;
-                break;
-            case 'education':
-                container = document.getElementById('education-fields-container');
-                fieldGroup = document.createElement('div');
-                fieldGroup.className = 'dynamic-field-group education-entry';
-                fieldGroup.innerHTML = `
-                    <h4>Education Entry ${eduCount + 1}</h4>
-                    <label>Degree</label>
-                    <input type="text" name="edu-degree-${eduCount}" required placeholder="BACHELOR OF DESIGN" class="edu-degree">
-                    <label>University</label>
-                    <input type="text" name="edu-university-${eduCount}" required placeholder="Borcelle University" class="edu-university">
-
-                    <label>Dates</label>
-                    <input type="text" name="edu-dates-${eduCount}" required placeholder="2008 - 2012" class="edu-dates">
-                `;
-                addRemovalButton(fieldGroup);
-                container.appendChild(fieldGroup);
-                eduCount++;
-                break;
-        }
-    }
-
-    // Initialize with one initial block for experience and education
-    window.onload = function() {
-        addDynamicField('experience');
-        addDynamicField('education');
+    // Exp / Edu Setup
+    const populateComplex = (srcId, destId, isExp) => {
+        const html = Array.from(document.getElementById(srcId).children).map(div => {
+            const t1 = div.querySelector('.t1').value;
+            const t2 = div.querySelector('.t2').value;
+            const t3 = div.querySelector('.t3').value;
+            const t4 = isExp ? div.querySelector('.t4').value : '';
+            return `
+                <div class="entry">
+                    <div class="entry-header"><span>${t1}</span><span>${t3}</span></div>
+                    <div class="entry-sub">${t2}</div>
+                    ${isExp ? `<div class="entry-desc">${t4.replace(/\n/g, '<br>')}</div>` : ''}
+                </div>`;
+        }).join('');
+        document.getElementById(destId).innerHTML = html;
     };
+    
+    populateComplex('exp-list', 'r-exp', true);
+    populateComplex('edu-list', 'r-edu', false);
 
-    // Form validation function
-    function validateForm() {
-        const form = document.getElementById('cv-form');
-        const inputs = form.querySelectorAll('input, textarea');
-        const alert = document.getElementById('validation-alert');
-        let isValid = true;
-        let firstMissingField = null;
+    // Swap Views
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('main-title').style.display = 'none';
+    document.getElementById('preview-section').style.display = 'block';
+}
 
-        // Reset previous validation styles
-        inputs.forEach(input => {
-            input.classList.remove('input-error');
-            const label = input.previousElementSibling;
-            if (label && label.tagName === 'LABEL') {
-                label.classList.remove('label-error');
-            }
-        });
-        alert.style.display = 'none';
+function editCV() {
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('form-section').style.display = 'block';
+    document.getElementById('main-title').style.display = 'block';
+}
 
-        // Check required fields
-        inputs.forEach(input => {
-            if (input.required && !input.value.trim()) {
-                isValid = false;
-                input.classList.add('input-error');
-                const label = input.previousElementSibling;
-                if (label && label.tagName === 'LABEL') {
-                    label.classList.add('label-error');
-                }
-                if (!firstMissingField) firstMissingField = input;
-            }
-        });
-         // Specific checks for dynamic areas - ensuring at least one skill/language/experience/education is filled if a block exists
-        // (This basic required check on generated fields covers it well enough for now)
-
-        if (!isValid) {
-            alert.style.display = 'block';
-            if (firstMissingField) firstMissingField.focus();
-            return false;
-        }
-
-        return true;
-    }
-
-    // Function to populate the preview with form data
-    function populatePreview() {
-        // Image processing (requires FileReader)
-        const photoInput = document.getElementById('photo-upload');
-        if (photoInput.files && photoInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('p-photo-img').src = e.target.result;
-            };
-            reader.readAsDataURL(photoInput.files[0]);
-        } else {
-            // Placeholder if no photo uploaded
-            document.getElementById('p-photo-img').src = 'https://via.placeholder.com/180?text=Profile';
-        }
-
-        // Standard Text Fields
-        document.getElementById('p-about-text').innerText = document.getElementById('about-text').value;
-        document.getElementById('p-contact-phone').innerText = document.getElementById('contact-phone').value;
-        document.getElementById('p-contact-email').innerText = document.getElementById('contact-email').value;
-        document.getElementById('p-contact-website').innerText = document.getElementById('contact-website').value;
-        document.getElementById('p-contact-location').innerText = document.getElementById('contact-location').value;
-        document.getElementById('p-first-name').innerText = document.getElementById('first-name').value;
-        document.getElementById('p-last-name').innerText = document.getElementById('last-name').value;
-        document.getElementById('p-title').innerText = document.getElementById('prof-title').value;
-
-        // Dynamic lists: Skills and Languages
-        const skillsList = document.getElementById('p-skills-list');
-        skillsList.innerHTML = ''; // clear existing
-        document.querySelectorAll('.skill-input').forEach(input => {
-            if (input.value.trim()) {
-                const li = document.createElement('li');
-                li.innerText = '• ' + input.value;
-                skillsList.appendChild(li);
-            }
-        });
-
-        const languagesList = document.getElementById('p-languages-list');
-        languagesList.innerHTML = '';
-        document.querySelectorAll('.language-input').forEach(input => {
-            if (input.value.trim()) {
-                const li = document.createElement('li');
-                li.innerText = '• ' + input.value;
-                languagesList.appendChild(li);
-            }
-        });
-
-        // Dynamic complex blocks: Work Experience
-        const expContainer = document.getElementById('p-experience-container');
-        expContainer.innerHTML = '';
-        const expEntries = document.querySelectorAll('.experience-entry');
-        expEntries.forEach(entry => {
-            const title = entry.querySelector('.exp-title').value;
-            const company = entry.querySelector('.exp-company').value;
-            const dates = entry.querySelector('.exp-dates').value;
-            const desc = entry.querySelector('.exp-desc').value;
-
-            if (title.trim()) {
-                const pEntry = document.createElement('div');
-                pEntry.className = 'p-entry';
-                pEntry.innerHTML = `
-                    <div class="p-entry-header">
-                        <h4 class="p-entry-title">${title}</h4>
-                        <span class="p-entry-dates">${dates}</span>
-                    </div>
-                    <p class="p-entry-subtitle">${company}</p>
-                    <p class="p-entry-description">${desc.replace(/\n/g, '<br>')}</p>
-                `;
-                expContainer.appendChild(pEntry);
-            }
-        });
-
-     // Dynamic complex blocks: Education
-        const eduContainer = document.getElementById('p-education-container');
-        eduContainer.innerHTML = '';
-        const eduEntries = document.querySelectorAll('.education-entry');
-        eduEntries.forEach(entry => {
-            const degree = entry.querySelector('.edu-degree').value;
-            const university = entry.querySelector('.edu-university').value;
-            const dates = entry.querySelector('.edu-dates').value;
-
-            if (degree.trim()) {
-                const pEntry = document.createElement('div');
-                pEntry.className = 'p-entry';
-                pEntry.innerHTML = `
-                    <div class="p-entry-header">
-                        <h4 class="p-entry-title">${degree}</h4>
-                        <span class="p-entry-dates">${dates}</span>
-                    </div>
-                    <p class="p-entry-subtitle">${university}</p>
-                `;
-                eduContainer.appendChild(pEntry);
-            }
-        });
-    }
-
-    // Function to show the preview section and hide the form
-    function showPreview() {
-        if (validateForm()) {
-            populatePreview();
-            document.getElementById('cv-form').style.display = 'none';
-            document.getElementById('validation-alert').style.display = 'none'; // hide any previous alerts
-            document.getElementById('preview-section').style.display = 'block';
-            window.scrollTo(0, 0); // scroll to top
-        }
-    }
-
-    // Function to hide the preview and go back to the editable form
-    function editForm() {
-        document.getElementById('preview-section').style.display = 'none';
-        document.getElementById('cv-form').style.display = 'grid'; // restore grid layout
-        window.scrollTo(0, 0); // scroll to top
-    }
-
-    // Function to download the resume as a PDF using html2pdf.js
-    function downloadResume() {
-        const element = document.getElementById('resume-preview-root');
-        const filename = (document.getElementById('first-name').value || 'Resume') + '_' + (document.getElementById('last-name').value || 'Wilson') + '_CV.pdf';
-        
-        const opt = {
-            margin:       0, // set margin to zero, handled by CSS
-            filename:     filename,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 }, // upscale for better clarity
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        // New pdf export functionality
-        html2pdf().set(opt).from(element).save();
-    }
+// -- PDF DOWNLOAD LOGIC --
+function downloadPDF() {
+    const element = document.getElementById('resume');
+    const opt = {
+        margin:       0,
+        filename:     'Resume.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true }, 
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+}
 </script>
-
 </body>
 </html>
